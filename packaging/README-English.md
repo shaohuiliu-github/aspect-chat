@@ -1,4 +1,4 @@
-# ASPECT Chat 1.1.0
+# ASPECT Chat 1.1.1
 
 Online launchers pull the published multi-platform image on first launch. Offline bundles import a matching local image. Registry publication must be verified before distributing an online launcher.
 

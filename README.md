@@ -1,10 +1,12 @@
-# ASPECT Chat 1.1.0
+# ASPECT Chat 1.1.1
 
 [极简安装说明 / Quick installation](INSTALL.md)
 
 通过对话描述、修改和运行本机 ASPECT 模型。界面支持中文/英文、PDF/图片/PRM 上传、参数文件查看、参数扫描、初始密度/温度/黏度预览，以及运行状态和日志。ASPECT 输出实时保存到本机文件夹，可以直接用 ParaView 打开。
 
-[English](README-English.md) · [可选启动包](https://github.com/shaohuiliu-github/aspect-chat/releases/tag/v1.1.0)
+1.1.1 修复了同一轮读取多个 PDF 页面和其他资料时，工具回复顺序导致的 DeepSeek HTTP 400 错误。
+
+[English](README-English.md) · [可选启动包](https://github.com/shaohuiliu-github/aspect-chat/releases/tag/v1.1.1)
 
 ## 使用
 
@@ -23,7 +25,7 @@
 
 知识库通过检索提供相关内容；模型还须实际验证，并进行科学判断。图片转物理场需要坐标、色标和转换关系。描述预期效果会生成候选模型，当前不进行自动反演优化。FastScape 未启用，需要额外程序或自定义插件的案例须检查依赖。
 
-本仓库提供应用和封装源码。Release 的 `ASPECT-Chat-1.1.0-source.zip` 提供完整构建上下文，包括官方 ASPECT 源码和离线知识库。对应源码也在镜像 `/opt/aspect-chat` 中，可使用 docker cp 导出。离线源码包内 `source/` 目录可按 `packaging/Dockerfile` 重建，需充足的编译内存。
+本仓库提供应用和封装源码。Release 的 `ASPECT-Chat-1.1.1-source.zip` 提供完整构建上下文，包括官方 ASPECT 源码和离线知识库。对应源码也在镜像 `/opt/aspect-chat` 中，可使用 docker cp 导出。离线源码包内 `source/` 目录可按 `packaging/Dockerfile` 重建，需充足的编译内存。
 
 两种架构各通过 35 项测试及 5 个真实 ASPECT 任务。Windows 启动器在 Linux PowerShell 中模拟验证，尚未实测 Windows 桌面；所有算例未逐一运行认证。
 

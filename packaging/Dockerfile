@@ -43,6 +43,6 @@ EXPOSE 8517
 HEALTHCHECK --interval=10s --timeout=5s --start-period=15s --retries=6 CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8517/api/health',timeout=3)"
 ENTRYPOINT ["/usr/bin/tini","--","python","/opt/aspect-chat/container_entry.py"]
 LABEL org.opencontainers.image.title="ASPECT Chat" \
-      org.opencontainers.image.version="1.1.0" \
+      org.opencontainers.image.version="1.1.1" \
       org.opencontainers.image.source="https://github.com/shaohuiliu-github/aspect-chat" \
       org.opencontainers.image.licenses="AGPL-3.0-or-later AND GPL-2.0-or-later"

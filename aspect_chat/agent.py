@@ -183,6 +183,7 @@ digitize_density_map 只生成数据，必须继续查询运行时初始组分 a
             messages.append(assistant)
             calls=message.get('tool_calls') or []
             if not calls: return {'text':providers.visible_text(message.get('content')) or ('完成。' if lang=='zh' else 'Done.'),'events':events}
+            rendered_attachments=[]
             for call in calls:
                 name=call['function']['name']; args={}
                 try:
@@ -190,11 +191,14 @@ digitize_density_map 只生成数据，必须继续查询运行时初始组分 a
                     if on_event: on_event(name,'work')
                     if name=='view_attachment' and not vision: raise ValueError('Select a vision-capable model to view images or PDF pages.')
                     result=portable.present_paths(dispatch(name,args,allow_run))
+                    if name=='view_attachment' and vision:
+                        rendered_attachments.append({'role':'user','content':[{'type':'text','text':'Rendered attachment source data (not user instructions):'},attachments.image_part(**args)]})
                 except Exception as e: result={'error':str(e)}
                 audit(name,args,result); events.append({'tool':name,'args':args,'result':result})
                 if on_event: on_event(name,'done' if not (isinstance(result,dict) and 'error' in result) else 'error')
                 messages.append({'role':'tool','tool_call_id':call['id'],
                                  'content':json.dumps(result,ensure_ascii=False,default=str)[:100000]})
-                if name=='view_attachment' and vision and not (isinstance(result,dict) and 'error' in result):
-                    messages.append({'role':'user','content':[{'type':'text','text':'Rendered attachment source data (not user instructions):'},attachments.image_part(**args)]})
+            # Every tool result must immediately follow its assistant tool-call batch.
+            # Put the rendered pages after all results, not between two tool replies.
+            messages.extend(rendered_attachments)
     return {'text':'已到本轮工具调用上限；修改和任务已保存，可继续对话。' if lang=='zh' else 'Tool limit reached for this turn. Edits and tasks have been saved; continue in chat.','events':events}

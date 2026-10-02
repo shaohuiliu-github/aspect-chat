@@ -4,23 +4,18 @@
 
 通过对话描述、修改和运行本机 ASPECT 模型。界面支持中文/英文、PDF/图片/PRM 上传、参数文件查看、参数扫描、初始密度/温度/黏度预览，以及运行状态和日志。ASPECT 输出实时保存到本机文件夹，可以直接用 ParaView 打开。
 
-[English](README-English.md) · [下载启动包](https://github.com/shaohuiliu-github/aspect-chat/releases/tag/v1.1.0)
+[English](README-English.md) · [可选启动包](https://github.com/shaohuiliu-github/aspect-chat/releases/tag/v1.1.0)
 
 ## 使用
 
-1. 安装并启动 Docker Desktop；Linux 也可使用 Docker Engine，Windows 使用 Linux containers。
-2. 下载 Release 中的 `ASPECT-Chat-1.1.0-online.zip`，解压到本地文件夹。
-3. Mac 双击 `Start.command`，Windows 双击 `Start.bat`，Linux 运行 `bash start.sh`。首次自动下载完整运行环境。
-4. 在设置中选择服务商，输入自己的 API 密钥；对话顶部选择模型。设置中还可调整单任务核数、总核数和时间上限。
-5. 对话生成或导入 PRM，查看参数并提交计算。停止应用用 Stop；结果和聊天保留在自己的 `workspace` 中。
+1. 安装并启动 Docker Desktop；Linux 也可使用 Docker Engine。
+2. 按 [安装说明](INSTALL.md) 直接从公开容器仓库拉取并启动镜像，无需下载 GitHub 压缩包或登录仓库。
+3. 在设置中选择服务商，输入自己的 API 密钥；对话顶部选择模型。设置中还可调整单任务核数、总核数和时间上限。
+4. 对话生成或导入 PRM，查看参数并提交计算。结果和聊天保留在自己的工作目录中。
 
 运行环境和知识库已经封装，不需要安装 ASPECT、MPI、Python，也不需要注册容器仓库账号。大型模型仍需要给 Docker 分配足够的 CPU 和内存。使用云端模型对话需要网络和自己的 API 额度。
 
-```sh
-docker pull ghcr.io/shaohuiliu-github/aspect-chat:1.1.0
-```
-
-结果位置：`workspace/runs/<任务编号>/output`。模型文件：`workspace/cases/<模型编号>/draft.prm`。API 密钥和聊天也是本地保存，请不要把使用过的工作目录发给别人。主机“打开文件夹”按钮依赖启动器窗口保持运行。
+结果位置：`aspect-chat-workspace/runs/<任务编号>/output`。模型文件：`aspect-chat-workspace/cases/<模型编号>/draft.prm`。API 密钥和聊天也是本地保存，请不要把使用过的工作目录发给别人。若需应用内的“打开文件夹”按钮调用 Finder/资源管理器，可选用 Release 启动包并保持启动器运行。
 
 ## 知识库与源码
 

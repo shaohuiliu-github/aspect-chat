@@ -6,12 +6,12 @@ Describe, modify and run local ASPECT models in a bilingual chat interface. ASPE
 
 ## Use
 
-Install and start Docker Desktop (Linux containers on Windows), then download the small online launcher from Releases. Mac: Start.command; Windows: Start.bat; Linux: bash start.sh. Enter your own provider API key in Settings. CPU, concurrency and timeout are configurable. A public image is downloadable without a registry account.
+Install and start Docker Desktop, then pull the public image directly from GitHub Container Registry. No GitHub ZIP or registry account is needed. The exact commands are in the [installation guide](INSTALL.md). Enter your own provider API key in Settings. CPU, concurrency and timeout are configurable. The Release launcher remains available if you want the in-app Open Folder button to call the host file manager.
 
 ```sh
 docker pull ghcr.io/shaohuiliu-github/aspect-chat:1.1.0
 mkdir -p workspace
-docker run -d --name aspect-chat --user "$(id -u):$(id -g)" -p 127.0.0.1:8517:8517 --mount type=bind,source="$(pwd)/workspace",target=/workspace ghcr.io/shaohuiliu-github/aspect-chat:1.1.0
+docker run -d --name aspect-chat --restart unless-stopped --user "$(id -u):$(id -g)" -p 127.0.0.1:8517:8517 -v "$(pwd)/workspace:/workspace" -e "ASPECT_CHAT_HOST_WORKSPACE=$(pwd)/workspace" ghcr.io/shaohuiliu-github/aspect-chat:1.1.0
 ```
 
 Open http://127.0.0.1:8517. For host Open Folder buttons, use the launcher rather than the plain docker command. Output files remain in `workspace/runs/<id>/output` and are readable by ParaView. API keys and conversations are local to your workspace; do not redistribute a used workspace.

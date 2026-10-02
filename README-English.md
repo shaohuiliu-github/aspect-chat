@@ -1,5 +1,7 @@
 # ASPECT Chat 1.1.0
 
+[极简安装说明 / Quick installation](INSTALL.md)
+
 Describe, modify and run local ASPECT models in a bilingual chat interface. ASPECT 3.1.0, MPI and a versioned offline knowledge base are bundled in the image. Upload PDF, image or PRM inputs; review model files; run parameter sweeps; retain ordinary ASPECT result files in your own workspace.
 
 ## Use

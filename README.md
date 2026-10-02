@@ -1,5 +1,7 @@
 # ASPECT Chat 1.1.0
 
+[极简安装说明 / Quick installation](INSTALL.md)
+
 通过对话描述、修改和运行本机 ASPECT 模型。界面支持中文/英文、PDF/图片/PRM 上传、参数文件查看、参数扫描、初始密度/温度/黏度预览，以及运行状态和日志。ASPECT 输出实时保存到本机文件夹，可以直接用 ParaView 打开。
 
 [English](README-English.md) · [下载启动包](https://github.com/shaohuiliu-github/aspect-chat/releases/tag/v1.1.0)

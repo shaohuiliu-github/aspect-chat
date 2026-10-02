@@ -121,3 +121,15 @@ def test_i2vis_density_preview_preserves_other_materials():
     after=initial_fields.i2vis(storage.get_case(c))[2]['density']
     assert np.allclose(after[0],before[0]) and np.allclose(after[-1],3250)
     assert storage.query('SELECT * FROM jobs')==[]
+
+
+def test_i2vis_nonlinear_coefficient_is_not_mislabeled_as_viscosity():
+    p=Path('tests/fixtures/i2vis/rayleigh_taylor')
+    c=i2vis.create('nonlinear', (p/'init.t3c').read_text(), (p/'mode.t3c').read_text())['case_id']
+    i2vis.modify(c,{'rock/2/markn0':'1e18','rock/2/markn1':'1e25',
+                    'rock/2/markdh':'200000','rock/2/markdv':'1',
+                    'rock/2/markmm':'3.5','rock/2/markss':'1e7','rock/2/marknu':'1e-20'})
+    _,_,fields,errors,_,_=initial_fields.i2vis(storage.get_case(c))
+    assert 'temperature' in fields and 'density' in fields
+    assert 'viscosity' not in fields and 'nonlinear' in errors['viscosity']
+    assert storage.query('SELECT * FROM jobs')==[]

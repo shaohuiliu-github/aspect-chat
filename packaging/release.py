@@ -6,6 +6,7 @@ parser=argparse.ArgumentParser();parser.add_argument('context',type=Path);parser
 parser.add_argument('--arch',choices=['arm64','amd64','universal','source','online'],required=True);parser.add_argument('--image',type=Path)
 parser.add_argument('--amd64-image',type=Path)
 parser.add_argument('--registry',default='ghcr.io/shaohuiliu-github/aspect-chat:2.0.0')
+parser.add_argument('--registry-verified',action='store_true',help='Record a completed anonymous registry verification')
 args=parser.parse_args();context=args.context.resolve();out=args.output.resolve();out.mkdir(parents=True,exist_ok=True)
 name='chatGFD-2.0.0-'+args.arch;root=out/name;root.mkdir(exist_ok=True)
 for name_in in ('start.sh','start.ps1','Start.command','Stop.command','Start.bat','Stop.bat','使用说明.md','README-English.md','LICENSE-NOTICES.md'):
@@ -36,7 +37,7 @@ if checksums: (root/'SHA256SUMS.txt').write_text('\n'.join(checksums)+'\n')
 (root/'workspace/inputs').mkdir(parents=True,exist_ok=True)
 (root/'workspace/README.txt').write_text('Your models, outputs and API key will be stored here. Do not redistribute a used workspace.\n')
 manifest=json.loads((context/'knowledge/manifest.json').read_text())
-manifest.update({'package':'chatGFD 2.0.0','architecture':args.arch,'offline_image_included':bool(args.image),'workspace_included':'empty scaffold only','registry_target':args.registry,'registry_publication_verified':False})
+manifest.update({'package':'chatGFD 2.0.0','architecture':args.arch,'offline_image_included':bool(args.image),'workspace_included':'empty scaffold only','registry_target':args.registry,'registry_publication_verified':args.registry_verified})
 (root/'发布信息.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
 report=out/'容器验证报告.json'
 if report.exists(): shutil.copy2(report,root/'验证报告.json')

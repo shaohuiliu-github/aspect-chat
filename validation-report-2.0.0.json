@@ -1,0 +1,134 @@
+{
+  "release": "chatGFD 2.0.0",
+  "tested_at": "2026-10-02T16:31:26.819575+00:00",
+  "application_commit": "e98abe7a331f7d64795d59dfdf645de3833b36ab",
+  "unit_tests": {
+    "passed": 46,
+    "warnings": 5,
+    "warning_type": "PyMuPDF SWIG deprecations"
+  },
+  "integrations": [
+    {
+      "architecture": "linux/arm64",
+      "execution": "native Apple silicon",
+      "report": {
+        "i2vis_jobs": [
+          "2da88fb23955",
+          "382ebaac6ab2",
+          "35ce6555cee6"
+        ],
+        "i2vis_backend": "SuiteSparse UMFPACK portable adapter",
+        "solver": {
+          "version": "3.1.0",
+          "packaged": true
+        },
+        "knowledge": {
+          "documents": 13698,
+          "models": 108,
+          "sources": 13
+        },
+        "chat_api": "mock provider; real modification, submission and computation",
+        "chat_job": "bb0b61441679",
+        "mpi_cores": 2,
+        "single_job": "9d9e2d603c78",
+        "direct_preview_id": "ebb3355c28cc",
+        "sweep_jobs": [
+          "fb689391d040",
+          "ae2d2a567622"
+        ],
+        "all_succeeded": true,
+        "maximum_observed_cores": 4,
+        "host_output_directory": "/workspace/runs/9d9e2d603c78/output",
+        "checks": [
+          "real 2-process MPI",
+          "two parameter sweep runs",
+          "three initial field PNGs",
+          "ASPECT statistics",
+          "persistent VTU outputs",
+          "readonly version-matched knowledge"
+        ]
+      }
+    },
+    {
+      "architecture": "linux/amd64",
+      "execution": "Linux amd64 emulation on Apple silicon",
+      "report": {
+        "i2vis_jobs": [
+          "3cdd81d81b18",
+          "33857fca1137",
+          "1a447ec71b00"
+        ],
+        "i2vis_backend": "SuiteSparse UMFPACK portable adapter",
+        "solver": {
+          "version": "3.1.0",
+          "packaged": true
+        },
+        "knowledge": {
+          "documents": 13698,
+          "models": 108,
+          "sources": 13
+        },
+        "chat_api": "mock provider; real modification, submission and computation",
+        "chat_job": "53f7742fcfac",
+        "mpi_cores": 2,
+        "single_job": "faea53078e4b",
+        "direct_preview_id": "518b966865de",
+        "sweep_jobs": [
+          "eff6b532db79",
+          "9f6ee10e1a18"
+        ],
+        "all_succeeded": true,
+        "maximum_observed_cores": 4,
+        "host_output_directory": "/workspace/runs/faea53078e4b/output",
+        "checks": [
+          "real 2-process MPI",
+          "two parameter sweep runs",
+          "three initial field PNGs",
+          "ASPECT statistics",
+          "persistent VTU outputs",
+          "readonly version-matched knowledge"
+        ]
+      }
+    }
+  ],
+  "image_coupling": {
+    "architecture": "linux/arm64",
+    "report": {
+      "aspect_job": "60d7f9b66a17",
+      "i2vis_job": "15190cb9904e",
+      "actual_initial_hdf5_density": true,
+      "unselected_material_preserved_in_preview": true,
+      "all_succeeded": true
+    },
+    "scope": "Calibrated reference density proxy for ASPECT simple material; I2VIS thermal anomaly in specified material with reference pressure. Actual HDF5 node/marker fields checked before first timestep."
+  },
+  "initial_previews": "Independent safe input evaluator; no simulation jobs",
+  "scientific_scope": "Short smoke tests and linear backward-error checks only; not mesh convergence, cross-backend agreement, or certified paper reproduction. Native Windows not tested. Conversation provider mocked for integration tests; computation is real.",
+  "registry_verification": {
+    "registry": "ghcr.io/shaohuiliu-github/aspect-chat:2.0.0",
+    "anonymous_access": true,
+    "digest": "sha256:2a7cdae89c01b57593f5b6ef512b93b0ac965367a71d22f5448a9a63cec864cd",
+    "platforms": [
+      {
+        "platform": {
+          "architecture": "arm64",
+          "os": "linux"
+        },
+        "digest": "sha256:e2556cc5eff2b7590eb225cdd7fee1d583bd126ec362f9ab4e4c1bb4948e2d1f",
+        "revision": "e98abe7a331f7d64795d59dfdf645de3833b36ab",
+        "version": "2.0.0"
+      },
+      {
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        },
+        "digest": "sha256:3a417e3c89a2fc98a5df180168884a84e5b37bcaf8a90cf3de645b454067c5e3",
+        "revision": "e98abe7a331f7d64795d59dfdf645de3833b36ab",
+        "version": "2.0.0"
+      }
+    ],
+    "anonymous_docker_pull": true
+  },
+  "initial_preview_regression": "Nonlinear I2VIS rheology coefficients are never mislabeled as viscosity; unsupported fields are omitted with an explanation."
+}

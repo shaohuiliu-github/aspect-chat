@@ -1,32 +1,37 @@
-# ASPECT Chat 1.1.1
+# chatGFD
 
-[极简安装说明 / Quick installation](INSTALL.md)
+**用数值模拟检验你的地球科学假说。看看物理上是否可行。**
 
-通过对话描述、修改和运行本机 ASPECT 模型。界面支持中文/英文、PDF/图片/PRM 上传、参数文件查看、参数扫描、初始密度/温度/黏度预览，以及运行状态和日志。ASPECT 输出实时保存到本机文件夹，可以直接用 ParaView 打开。
+Geophysical Fluid Dynamics Simulation · 地球流体动力学模拟
 
-1.1.1 修复了同一轮读取多个 PDF 页面和其他资料时，工具回复顺序导致的 DeepSeek HTTP 400 错误。
+[English](README-English.md) · [复制安装命令](INSTALL.md) · [发布包与验证报告](https://github.com/shaohuiliu-github/aspect-chat/releases/tag/v2.0.0)
 
-[English](README-English.md) · [可选启动包](https://github.com/shaohuiliu-github/aspect-chat/releases/tag/v1.1.1)
+面向地质、地球化学、地震与古地磁研究，也帮助初学者建立第一个动力学模型。通过对话创建、修改和运行 ASPECT / i2vis 模型。求解器、Python 环境和带版本的离线知识库封装在 Docker 镜像里，无需下载 GitHub 或安装求解器。
 
-## 使用
+## 开始使用
 
-1. 安装并启动 Docker Desktop；Linux 也可使用 Docker Engine。
-2. 按 [安装说明](INSTALL.md) 直接从公开容器仓库拉取并启动镜像，无需下载 GitHub 压缩包或登录仓库。
-3. 在设置中选择服务商，输入自己的 API 密钥；对话顶部选择模型。设置中还可调整单任务核数、总核数和时间上限。
-4. 对话生成或导入 PRM，查看参数并提交计算。结果和聊天保留在自己的工作目录中。
+安装并启动 Docker，然后复制 [安装说明](INSTALL.md) 中的命令。打开本地网页，设置 API 密钥，左上选择 ASPECT 或 i2vis，对话框下方选择大模型。模型与结果实时保存在你自己的工作文件夹，供 ParaView 等软件读取。
 
-运行环境和知识库已经封装，不需要安装 ASPECT、MPI、Python，也不需要注册容器仓库账号。大型模型仍需要给 Docker 分配足够的 CPU 和内存。使用云端模型对话需要网络和自己的 API 额度。
+## 2.0.0 的工作流程
 
-结果位置：`aspect-chat-workspace/runs/<任务编号>/output`。模型文件：`aspect-chat-workspace/cases/<模型编号>/draft.prm`。API 密钥和聊天也是本地保存，请不要把使用过的工作目录发给别人。若需应用内的“打开文件夹”按钮调用 Finder/资源管理器，可选用 Release 启动包并保持启动器运行。
+- 在对话框上传 PDF、图片、PRM 或 i2vis 输入文件，发送后的附件保留在消息里。中英文界面，新工作区默认英文；可删除对话并保留模型和结果。
+- 论文提取先记录物理参数、原单位、PDF 页码、短引文、换算、实际输入值和缺失项。记录随输入版本变化，并随运行快照保存。参数语法通过不代表论文已复现；网格和迭代收敛检查是后续工作。
+- 初始密度、温度与参考黏度由独立代码评估输入函数并绘图，不启动模拟。不支持的几何、材料与初始场会明确说明。参考黏度不等于非线性求解后的有效黏度。
+- 图片转换使用明确的色标、坐标、单位和物理关系。ASPECT 简单材料可接入密度组成代理；当前 i2vis 分支可按指定材料与参考压力，把热密度异常转换为初始温度。它会改变温度相关流变，不能仅凭地震波速唯一反演密度。
+- 对话中直接显示模型检查结果和红绿任务状态。可以手动编辑、检查和运行参数文件，展开实际日志；手动操作无需大模型 API。扫描时每个任务使用独立输入快照，限制同时核数与时间。
 
-## 知识库与源码
+## 知识库与求解器
 
-内置 ASPECT 3.1.0 完整源码及全部 1,796 个 PRM 文件、293 页官方手册、1,159 页官方 API、1,696 个独立运行时参数条目、辅助脚本和算例输入依赖目录，以及 World Builder 1.1.1 的实际参数定义。开发版源码和 Wiki 导航标为参考资料，默认检索不使用它们。来源、版本和覆盖统计见 [knowledge-manifest.json](knowledge-manifest.json)。
+ASPECT 为已验证的 3.1.0 发布版，包含全部 1,796 个稳定版 PRM 文件、手册、API、参数条目、World Builder 和工具源代码。开发版与 Wiki 导航明确为参考来源。
 
-知识库通过检索提供相关内容；模型还须实际验证，并进行科学判断。图片转物理场需要坐标、色标和转换关系。描述预期效果会生成候选模型，当前不进行自动反演优化。FastScape 未启用，需要额外程序或自定义插件的案例须检查依赖。
+已安装 i2vis 是用户提供并确认公开许可的 Gerya / Yang / Faccenda HDF5 分支，固定到 a203df002bf8e41c3a29ad0c4857cef3d1daf0a1；包含对应源码、相图表、源代码参数指南和三个短程教学模板。便携后端以 SuiteSparse UMFPACK 替代 Intel MKL，日志保留线性残差检查；这不等于已证明两个后端的科研结果相同。输入格式不支持任意 I2VIS 分支直接运行。
 
-本仓库提供应用和封装源码。Release 的 `ASPECT-Chat-1.1.1-source.zip` 提供完整构建上下文，包括官方 ASPECT 源码和离线知识库。对应源码也在镜像 `/opt/aspect-chat` 中，可使用 docker cp 导出。离线源码包内 `source/` 目录可按 `packaging/Dockerfile` 重建，需充足的编译内存。
+新增参考：[I2ELVIS planet](https://github.com/FormingWorlds/i2elvis_planet)、[Gou/Liu 论文模型设置](https://github.com/YirenGou/Gou-and-Liu-2026-Dripping-Tectonics)。这些分支的输入和物理公式不同，默认检索排除，需显式选择后核对与迁移。详细来源和覆盖范围见 [知识库清单](knowledge-manifest.json)。
 
-两种架构各通过 35 项测试及 5 个真实 ASPECT 任务。Windows 启动器在 Linux PowerShell 中模拟验证，尚未实测 Windows 桌面；所有算例未逐一运行认证。
+## 源码与边界
 
-应用采用 AGPL-3.0-or-later，ASPECT 采用 GPL-2.0-or-later，见 [LICENSE](LICENSE) 和 [依赖许可](packaging/LICENSE-NOTICES.md)。项目未获上游官方背书。
+应用源码为 AGPL-3.0-or-later；ASPECT 与其他参考源码保留各自许可，见 [许可说明](packaging/LICENSE-NOTICES.md)。本地 i2vis 的许可依据尚待提供附档，不能把应用许可当成它的许可。
+
+完整对应源码与构建环境位于 Release 的 source ZIP，也可从镜像导出 /opt/aspect-chat 和 /opt/chatgfd-adapter。在源码包 source 目录运行 `docker build -f packaging/Dockerfile -t chatgfd-local .`。
+
+结果、对话和密钥保存在本机工作区；云端对话需要联网及你的 API 额度。图像标定和论文参数的科学意义需要人工审阅。短程运行测试不替代网格收敛或科研基准验证。直接 Docker 模式可从本机工作目录读取结果；可选启动包支持“打开文件夹”调用主机文件管理器。

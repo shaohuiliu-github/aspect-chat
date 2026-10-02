@@ -123,11 +123,10 @@ def test_image_calibration_units_orientation_and_data():
 def test_preview_cache_and_snapshot():
     case=cases.create('preview',BASE)['case_id']
     first=previews.schedule(case);assert previews.schedule(case)==first
-    snapshot=(storage.DATA/'runs'/first/'input.prm').read_text()
-    assert prm.values(snapshot)['End time']=='0'
-    assert prm.values(snapshot)['Nonlinear solver scheme']=='no Advection, no Stokes'
+    snapshot=(storage.DATA/'previews'/first/'draft.prm').read_text()
+    assert snapshot==BASE
     assert cases.draft(case)==BASE
-    assert storage.query('SELECT kind FROM jobs')[0]['kind']=='preview'
+    assert storage.query('SELECT * FROM jobs')==[], 'Direct previews must never queue a simulation'
     cases.modify(case,{'End time':'2'})
     assert previews.schedule(case)==first
     cases.modify(case,{'Initial temperature model/Function/Function expression':'1600'},allow_new=True)

@@ -1,25 +1,41 @@
-# ASPECT Chat 1.1.1
+# chatGFD
 
-[极简安装说明 / Quick installation](INSTALL.md)
+**Test your Earth science ideas with simulations. See what is physically possible.**
 
-Describe, modify and run local ASPECT models in a bilingual chat interface. ASPECT 3.1.0, MPI and a versioned offline knowledge base are bundled in the image. Upload PDF, image or PRM inputs; review model files; run parameter sweeps; retain ordinary ASPECT result files in your own workspace.
+Geophysical Fluid Dynamics Simulation
 
-Version 1.1.1 fixes a DeepSeek HTTP 400 caused by interleaving rendered PDF pages with replies to a batch of tool calls.
+[中文](README.md) · [Copy installation commands](INSTALL.md) · [Releases and validation report](https://github.com/shaohuiliu-github/aspect-chat/releases/tag/v2.0.0)
 
-## Use
+A local conversational workspace for ASPECT and i2vis, for geology, geochemistry, seismology and paleomagnetism research, with a first-model guide for beginners. The Docker image bundles solvers, Python dependencies and versioned offline references. No GitHub ZIP or separate solver installation is required.
 
-Install and start Docker Desktop, then pull the public image directly from GitHub Container Registry. No GitHub ZIP or registry account is needed. The exact commands are in the [installation guide](INSTALL.md). Enter your own provider API key in Settings. CPU, concurrency and timeout are configurable. The Release launcher remains available if you want the in-app Open Folder button to call the host file manager.
+## Start
 
-```sh
-docker pull ghcr.io/shaohuiliu-github/aspect-chat:1.1.1
-mkdir -p workspace
-docker run -d --name aspect-chat --restart unless-stopped --user "$(id -u):$(id -g)" -p 127.0.0.1:8517:8517 -v "$(pwd)/workspace:/workspace" -e "ASPECT_CHAT_HOST_WORKSPACE=$(pwd)/workspace" ghcr.io/shaohuiliu-github/aspect-chat:1.1.1
-```
+Install and start Docker, then copy the commands in the [installation guide](INSTALL.md). Open the local webpage, enter your API key in Settings, select ASPECT or i2vis at the upper left, and choose the chat model below the composer. Outputs stay in your own workspace for ParaView and other software.
 
-Open http://127.0.0.1:8517. For host Open Folder buttons, use the launcher rather than the plain docker command. Output files remain in `workspace/runs/<id>/output` and are readable by ParaView. API keys and conversations are local to your workspace; do not redistribute a used workspace.
+## Workflow
 
-## Knowledge and source
+Upload PDF, image, PRM or i2vis inputs in the composer. Sent attachments remain visible in chat. New workspaces default to English; language switching and conversation deletion preserve model/result files.
 
-The runtime knowledge uses ASPECT 3.1.0. Development snapshots and Wiki navigation are opt-in references and cannot be loaded as runtime models. See knowledge-manifest.json for pinned origins and coverage. This repository contains application source and packaging tools. The complete release build context, including the full official ASPECT source and offline knowledge, is attached as the source ZIP in Releases and is also inside the image under /opt/aspect-chat. Export it with docker cp. Rebuild from the release source directory using `docker build -f packaging/Dockerfile -t aspect-chat-local .` (requires substantial CPU/RAM and download access).
+Paper modeling prioritizes physical alignment: original values and units, PDF pages, supporting excerpts, conversions, actual input values, assumptions and missing items. Evidence is tied to the input revision and copied into run snapshots. Syntax validity is not paper reproduction. Discretization and nonlinear convergence must then be assessed separately.
 
-ASPECT is GPL-2.0-or-later; this application is AGPL-3.0-or-later. See LICENSE and packaging/LICENSE-NOTICES.md. This project has no upstream endorsement. Cloud conversation calls need your internet connection and API quota. Generated candidate models still require scientific review and actual validation; the application does not perform automatic inverse optimization. World Builder is enabled; FastScape is disabled.
+Independent code draws initial temperature, density and reference viscosity directly from supported input functions and material parameters. It never launches a simulator for a preview. Unsupported features are reported. Reference viscosity is not nonlinear effective viscosity.
+
+Image conversion needs a calibrated legend, coordinates, units and an explicit physical relationship. A simple ASPECT material can use a density-composition proxy. The installed i2vis variant can convert a thermal density anomaly into initial temperature for a specified rock and reference pressure; this changes temperature-dependent rheology. Seismic velocity alone does not uniquely determine density.
+
+Parameter errors and colored simulation states appear directly in chat. Edit, check and run files manually without a conversation API call, and expand actual logs. Sweeps use independent snapshots with core and time budgets.
+
+## Knowledge and runtime
+
+ASPECT is the verified 3.1.0 release, with all 1,796 stable PRM files, manuals, API documentation, parameter entries, World Builder and tools. Development and Wiki navigation records are opt-in references.
+
+The installed i2vis is the user-supplied Gerya/Yang/Faccenda HDF5 variant, pinned to a203df002bf8e41c3a29ad0c4857cef3d1daf0a1. It includes corresponding source, phase tables, source-linked parameter entries and three short teaching templates. The portable linear backend substitutes SuiteSparse UMFPACK for Intel MKL and checks backward error. This does not certify scientific equivalence with MKL. Arbitrary I2VIS branches are not drop-in runtime inputs.
+
+Reference-only sources include [I2ELVIS planet](https://github.com/FormingWorlds/i2elvis_planet) and [Gou/Liu paper settings](https://github.com/YirenGou/Gou-and-Liu-2026-Dripping-Tectonics). Select these explicitly, then align their physics and input format before adaptation. See [knowledge provenance](knowledge-manifest.json).
+
+## Source and scope
+
+Application: AGPL-3.0-or-later. Independent solver/reference licenses remain distinct; see [notices](packaging/LICENSE-NOTICES.md). The user confirmed local i2vis redistribution permission; documentary evidence is still pending.
+
+Complete corresponding source/build context is in the Release source ZIP and in the image under /opt/aspect-chat and /opt/chatgfd-adapter. From the source ZIP's source directory: `docker build -f packaging/Dockerfile -t chatgfd-local .`.
+
+Keys, conversations and results stay in your workspace; cloud chat requires internet and your API quota. Scientific review remains necessary. Short smoke runs do not replace mesh convergence or research benchmarks. Plain Docker writes normal host files; the optional launcher also enables host Open Folder actions.

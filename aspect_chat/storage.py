@@ -22,7 +22,10 @@ def db():
     CREATE TABLE IF NOT EXISTS chat_sessions(id TEXT PRIMARY KEY,title TEXT,lang TEXT,case_id TEXT,created REAL,updated REAL);
     ''')
     for table, column, definition in [('jobs','kind',"TEXT DEFAULT 'simulation'"),('chats','lang',"TEXT DEFAULT 'zh'"),
-                                       ('chats','session_id','TEXT'),('requests','session_id','TEXT')]:
+                                       ('chats','session_id','TEXT'),('requests','session_id','TEXT'),
+                                       ('chats','attachments',"TEXT DEFAULT '[]'"),
+                                       ('cases','engine',"TEXT DEFAULT 'aspect'"),
+                                       ('chat_sessions','engine',"TEXT DEFAULT 'aspect'")]:
         if column not in {r[1] for r in c.execute('PRAGMA table_info('+table+')')}:
             c.execute(f'ALTER TABLE {table} ADD COLUMN {column} {definition}')
     c.commit()
@@ -52,7 +55,7 @@ def config():
                 'source_root': os.environ.get('ASPECT_CHAT_SOURCE', str(local_source)),
                 'mpi': os.environ.get('ASPECT_CHAT_MPI', shutil.which('mpirun') or 'mpirun'),
                 'max_concurrent': 64, 'task_cores': 1, 'max_total_cores': min(8,os.cpu_count() or 1), 'timeout_seconds': 21600,
-                'provider': 'deepseek', 'language': 'zh', 'base_url': 'https://api.deepseek.com/v1', 'model': 'deepseek-chat'}
+                'provider': 'deepseek', 'language': 'en', 'base_url': 'https://api.deepseek.com/v1', 'model': 'deepseek-flash'}
     if p.exists(): defaults.update(json.loads(p.read_text()))
     return defaults
 
@@ -80,9 +83,9 @@ def save_key(value,provider=None):
     keys[provider or config()['provider']]=value.strip()
     p.write_text(json.dumps(keys)); p.chmod(0o600)
 
-def add_chat(role, content,lang=None,session_id=None):
-    execute('INSERT INTO chats(role,content,created,lang,session_id) VALUES(?,?,?,?,?)',
-            (role,content,time.time(),lang or config()['language'],session_id))
+def add_chat(role, content,lang=None,session_id=None,attachments=None):
+    execute('INSERT INTO chats(role,content,created,lang,session_id,attachments) VALUES(?,?,?,?,?,?)',
+            (role,content,time.time(),lang or config()['language'],session_id,json.dumps(attachments or [],ensure_ascii=False)))
 
 def audit(tool, args, output):
     execute('INSERT INTO events(tool,input,output,created) VALUES(?,?,?,?)',

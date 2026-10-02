@@ -6,3 +6,5 @@ __pycache__/
 images/
 *.tar.gz
 *.zip
+
+work/

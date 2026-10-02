@@ -3,9 +3,9 @@
   "base_image": "geodynamics/aspect:v3.1.0",
   "base_digest": "sha256:a3b599ac1d20d2a150f567a31d39591de18cf0c7e31fa9e9807d07dc291526c4",
   "knowledge": {
-    "documents": 13484,
-    "models": 102,
-    "sources": 8
+    "documents": 13698,
+    "models": 108,
+    "sources": 13
   },
   "sources": [
     {
@@ -108,5 +108,57 @@
     "wiki_mode": "navigation records; article text not redistributed"
   },
   "retrieved": "2026-10-02",
-  "development_sources_require_explicit_selection": true
+  "development_sources_require_explicit_selection": true,
+  "i2vis": {
+    "revision": "a203df002bf8e41c3a29ad0c4857cef3d1daf0a1",
+    "linear_solver": "UMFPACK portable adapter",
+    "sources": [
+      {
+        "source": "i2vis-source",
+        "version": "a203df002bf8",
+        "role": "runtime",
+        "revision": "a203df002bf8e41c3a29ad0c4857cef3d1daf0a1",
+        "documents": 63,
+        "categories": {
+          "code": 63
+        }
+      },
+      {
+        "source": "i2vis-manual",
+        "version": "a203df002bf8",
+        "role": "runtime",
+        "revision": "a203df002bf8e41c3a29ad0c4857cef3d1daf0a1",
+        "documents": 128,
+        "categories": {
+          "manual": 128
+        }
+      },
+      {
+        "source": "i2vis-templates",
+        "version": "a203df002bf8",
+        "role": "runtime",
+        "revision": "a203df002bf8e41c3a29ad0c4857cef3d1daf0a1",
+        "documents": 6,
+        "categories": {
+          "model": 6
+        }
+      }
+    ],
+    "redistribution": "Authorized by owner; no LICENSE present in supplied source. Separate notice.",
+    "public_references": [
+      {
+        "source": "i2vis-public-i2elvis",
+        "origin": "https://github.com/FormingWorlds/i2elvis_planet",
+        "revision": "e2c8487015db5bfea80ec4c178f30bf6c32541c4",
+        "role": "reference"
+      },
+      {
+        "source": "i2vis-public-dripping",
+        "origin": "https://github.com/YirenGou/Gou-and-Liu-2026-Dripping-Tectonics",
+        "revision": "65b9b4b4c26ae8b718f821b1c9dd0fc3642e3c63",
+        "role": "reference"
+      }
+    ]
+  },
+  "package_version": "2.0.0"
 }

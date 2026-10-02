@@ -1,67 +1,67 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="aspect-token" content="__CSRF_TOKEN__">
-  <title>ASPECT Chat</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23252525'/%3E%3Cpath d='M6 23L16 7l10 16M10 17h12' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+  <title>chatGFD</title>
+  <link rel="icon" href="/logo.svg">
   <link rel="stylesheet" href="/style.css"><script defer src="/app.js"></script>
 </head>
 <body>
 <div id="app" class="app">
   <div id="sidebar-scrim" class="sidebar-scrim"></div>
   <aside class="sidebar" id="sidebar">
-    <div class="brand"><span class="brand-mark" data-icon="aspect"></span><span>ASPECT Chat</span><button class="icon-button sidebar-close" id="sidebar-close" data-label="close" data-icon="close"></button></div>
+    <div class="brand"><div class="brand-lockup"><span class="wordmark">chat<strong>GFD</strong></span><span class="brand-description" data-t="brand_full_name"></span></div><button class="icon-button sidebar-close" id="sidebar-close" data-label="close" data-icon="close"></button></div>
     <nav class="primary-nav">
       <button id="new-chat" class="nav-button" data-icon="edit"><span data-t="new_chat"></span></button>
-      <button id="upload-nav" class="nav-button" data-icon="upload"><span data-t="attach"></span></button>
-      <button id="model-nav" class="nav-button" data-icon="file"><span data-t="file_tab"></span></button>
     </nav>
     <div class="history-heading" data-t="history"></div>
     <div id="history" class="history"></div>
     <div class="sidebar-bottom">
       <button id="settings-nav" class="nav-button" data-icon="settings"><span data-t="settings_tab"></span></button>
-      <div class="sidebar-meta"><div class="local-label"><i class="status-dot green"></i>ASPECT <span id="runtime-version"></span></div><div class="language-switch" aria-label="Language"><button id="lang-zh" title="中文">中</button><button id="lang-en" title="English">EN</button></div></div>
+      <div class="sidebar-meta"><div class="local-label"><i class="status-dot green"></i><span id="runtime-version"></span></div><div class="language-switch" aria-label="Language"><button id="lang-zh" title="中文">中</button><button id="lang-en" title="English">EN</button></div></div>
     </div>
   </aside>
   <main class="workspace">
     <header class="topbar">
-      <div class="topbar-left"><button id="sidebar-open" class="icon-button mobile-menu" data-icon="menu" data-label="menu"></button><button id="model-picker" class="model-picker"><span id="model-name">ASPECT Chat</span><span data-icon="chevron"></span></button></div>
+      <div class="topbar-left"><button id="sidebar-open" class="icon-button mobile-menu" data-icon="menu" data-label="menu"></button><select id="engine-select" class="engine-select" aria-label="Simulation code"><option value="aspect">ASPECT</option><option value="i2vis">i2vis</option></select></div>
       <div class="topbar-right"><button id="context-button" class="context-button" data-icon="file"><span id="context-name"></span></button><button id="tasks-button" class="tasks-button"><i id="tasks-dot" class="status-dot"></i><span id="tasks-label" data-t="tasks_short"></span><span id="task-count" class="count">0</span></button></div>
     </header>
     <section class="chat-viewport" id="chat-viewport">
-      <div id="welcome" class="welcome"><div class="welcome-symbol" data-icon="aspect"></div><h1 data-t="hero_title"></h1><p data-t="hero_subtitle"></p></div>
-      <div id="messages" class="messages" aria-live="polite"></div>
+      <div id="welcome" class="welcome"><h1 data-t="hero_title"></h1></div>
+      <div id="messages" class="messages" aria-live="polite"></div><div id="chat-status" class="chat-status" aria-live="polite"></div>
     </section>
     <div class="composer-area" id="composer-area">
-      <div id="connection-hint" class="connection-hint hidden"><span data-t="no_api"></span><button id="setup-api" data-t="settings_tab"></button></div>
+      <div id="connection-hint" class="connection-hint hidden"><button id="setup-api" data-t="connect_short"></button></div>
       <div class="composer">
         <div id="attachment-chips" class="attachment-chips"></div>
         <textarea id="prompt" rows="1" data-placeholder="prompt"></textarea>
-        <div class="composer-tools"><div class="composer-left"><button id="attach-button" class="icon-button" data-icon="plus" data-label="attach"></button><button id="reuse-button" class="subtle-button" data-icon="paperclip"><span data-t="reuse_files"></span></button></div><button id="send-button" class="send-button" data-icon="arrow" data-label="send" disabled></button></div>
+        <div class="composer-tools"><div class="composer-left"><button id="attach-button" class="icon-button" data-icon="plus" data-label="attach"></button></div><button id="send-button" class="send-button" data-icon="arrow" data-label="send" disabled></button></div>
       </div>
+      <div class="composer-footer"><button id="model-picker" class="model-picker"><span id="model-name"></span><span data-icon="chevron"></span></button></div>
       <div id="starters" class="starters"><button data-starter="example_model" data-icon="layers"><span data-t="starter_model"></span></button><button data-starter="example_paper" data-icon="book"><span data-t="starter_paper"></span></button><button data-starter="example_scan" data-icon="sliders"><span data-t="starter_scan"></span></button></div>
-      <p class="composer-note" data-t="chat_footer"></p>
+      <details id="classic-examples" class="classic-examples"><summary data-t="examples_short"></summary><div id="classic-example-list"></div></details>
     </div>
   </main>
   <aside id="drawer" class="drawer hidden" aria-label="Details">
     <header class="drawer-header"><h2 id="drawer-title"></h2><button id="drawer-close" class="icon-button" data-icon="close" data-label="close"></button></header>
     <div id="tasks-panel" class="drawer-body hidden"><div class="panel-meta" id="worker-state"></div><div id="jobs-list"></div><div id="job-detail" class="hidden"></div><p class="panel-footnote" data-t="original_results"></p></div>
     <div id="model-panel" class="drawer-body hidden">
-      <select id="case-select" data-label="select_case"></select>
+      <select id="case-select" data-label="select_case"></select><select id="model-file-select" class="hidden" aria-label="Parameter file"></select>
       <div id="model-empty" class="empty-state"><span data-icon="file"></span><p data-t="no_case"></p></div>
-      <div id="model-content" class="hidden"><div class="file-toolbar"><span id="file-state" class="file-state"></span><div><button id="open-model-folder" class="icon-button" data-icon="folder" data-label="folder"></button><button id="download-model" class="icon-button" data-icon="download" data-label="download_prm"></button></div></div><textarea id="prm-editor" class="prm-editor" spellcheck="false" data-label="editor"></textarea><div class="file-actions"><button id="reload-model" class="text-button hidden" data-t="reload_file"></button><button id="save-model" class="small-primary" data-t="save_draft" disabled></button></div><details class="file-path"><summary data-t="draft_path"></summary><code id="model-path"></code></details><details id="model-diff" class="hidden"><summary data-t="changes"></summary><pre></pre></details><div class="preview-heading"><h3 data-t="initial_fields"></h3><span data-t="synced"></span></div><div id="field-tabs" class="field-tabs"><button data-field="density" class="active" data-t="density"></button><button data-field="viscosity" data-t="viscosity"></button><button data-field="temperature" data-t="temperature"></button></div><div id="preview-content"></div><details class="preview-explanation"><summary data-t="preview_note_short"></summary><p data-t="preview_limit"></p></details></div>
+      <div id="model-content" class="hidden"><div class="file-toolbar"><span id="file-state" class="file-state"></span><div><button id="open-model-folder" class="icon-button" data-icon="folder" data-label="folder"></button><button id="download-model" class="icon-button" data-icon="download" data-label="download_prm"></button></div></div><textarea id="prm-editor" class="prm-editor" spellcheck="false" data-label="editor"></textarea><div class="file-actions"><button id="reload-model" class="text-button hidden" data-t="reload_file"></button><button id="save-model" class="small-primary" data-t="save_draft" disabled></button><button id="run-model" class="small-primary" data-t="run_model"></button></div><details class="file-path"><summary data-t="draft_path"></summary><code id="model-path"></code></details><details id="model-diff" class="hidden"><summary data-t="changes"></summary><pre></pre></details><div class="preview-heading"><h3 data-t="initial_fields"></h3><span data-t="synced"></span></div><div id="field-tabs" class="field-tabs"><button data-field="density" class="active" data-t="density"></button><button data-field="viscosity" data-t="viscosity"></button><button data-field="temperature" data-t="temperature"></button></div><div id="preview-content"></div><details class="preview-explanation"><summary data-t="preview_note_short"></summary><p data-t="preview_limit"></p></details></div>
       <details class="local-import"><summary data-t="local_import"></summary><label><span data-t="local_path"></span><input id="local-path" placeholder="/path/to/model.prm"></label><button id="import-local" class="small-primary" data-t="import"></button></details>
     </div>
   </aside>
 </div>
 <div id="model-menu" class="popover hidden"><label><span data-t="choose_provider"></span><select id="provider-select"></select></label><label><span data-t="model_id"></span><input id="model-search" list="model-options" data-placeholder="search_models" autocomplete="off"><datalist id="model-options"></datalist></label><div id="model-options-list" class="model-options"></div><p id="vision-hint"></p><button id="apply-model" class="small-primary" data-t="apply"></button></div>
+<div id="upload-menu" class="popover upload-menu hidden"><button id="upload-new" data-t="attach"></button><button id="reuse-button" data-t="reuse_files"></button></div>
 <div id="files-menu" class="popover files-menu hidden"><h3 data-t="reuse_files"></h3><div id="saved-files"></div></div>
 <div id="settings-modal" class="modal-backdrop hidden"><section class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title"><header><h2 id="settings-title" data-t="settings_tab"></h2><button id="settings-close" class="icon-button" data-icon="close" data-label="close"></button></header><nav class="settings-tabs"><button data-settings="connection" class="active" data-t="connection_short"></button><button data-settings="compute" data-t="compute_short"></button><button data-settings="knowledge" data-t="knowledge_short"></button></nav><div class="settings-scroll">
   <form id="connection-form" class="settings-section"><h3 data-t="connection"></h3><p class="section-description" data-t="key_scope"></p><label><span data-t="provider"></span><select id="settings-provider"></select></label><label><span data-t="api_key_simple"></span><input id="api-key" type="password" autocomplete="off" data-placeholder="api_key_placeholder"></label><div class="key-state" id="key-state"></div><details class="advanced-connection"><summary data-t="advanced_connection"></summary><label><span data-t="api_url"></span><input id="api-url" type="url"></label></details><button class="small-primary" type="submit" data-t="save_connection"></button><p id="connection-result" role="status"></p></form>
   <form id="compute-form" class="settings-section hidden"><h3 data-t="compute"></h3><div class="form-grid"><label><span data-t="task_cores"></span><input id="task-cores" type="number" min="1" max="64" required></label><label><span data-t="total_cores"></span><input id="total-cores" type="number" min="1" max="64" required></label><label><span data-t="timeout"></span><input id="timeout-hours" type="number" min="0.01" max="168" step="0.01" required></label></div><details><summary data-t="runtime"></summary><label><span data-t="binary"></span><input id="binary"></label><label><span data-t="source"></span><input id="source-root"></label><label><span data-t="mpi"></span><input id="mpi"></label><code id="storage-path"></code></details><p class="section-description" data-t="runtime_note"></p><button class="small-primary" type="submit" data-t="save_compute"></button></form>
   <div id="knowledge-section" class="settings-section hidden"><h3 data-t="knowledge"></h3><div id="knowledge-stats" class="knowledge-stats"></div><p class="section-description" data-t="kb_hint"></p><div class="knowledge-search"><input id="kb-search" data-placeholder="search_knowledge_placeholder"><button id="kb-search-button" class="icon-button" data-icon="search" data-label="kb_search"></button></div><div class="knowledge-filters"><select id="kb-source" data-label="all_sources"></select><select id="kb-kind" data-label="all_kinds"></select></div><div id="kb-results"></div><details><summary data-t="sources_detail"></summary><div id="kb-sources"></div></details></div>
 </div></section></div>
-<input id="file-input" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.prm,.zip" multiple hidden>
+<input id="file-input" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.prm,.t3c,.zip" multiple hidden>
 <div id="toast" class="toast hidden" role="status"></div>
 </body></html>

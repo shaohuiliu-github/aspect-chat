@@ -1,5 +1,5 @@
 from pathlib import Path
-import csv, json, os, re, signal, subprocess, time
+import csv, json, os, re, signal, subprocess, time, sys
 from .storage import DATA, config, execute, query
 
 TERMINAL={'succeeded','failed','cancelled','interrupted'}
@@ -55,13 +55,18 @@ def export_batch(batch):
 
 def validation(case_id,binary=None):
     from .cases import draft
+    from .storage import get_case
+    from . import diagnostics
+    if get_case(case_id)['engine']=='i2vis':
+        from .i2vis import inspect
+        result=inspect(case_id);return diagnostics.save_check(case_id,{'ok':result['ok'],'log':'\n'.join(result['errors']),'scope':result['scope']})
     root=DATA/'checks'/case_id; root.mkdir(parents=True,exist_ok=True)
     p=root/'input.prm'; p.write_text(draft(case_id))
     from .storage import get_case
     cp=subprocess.run([binary or config()['binary'],'--validate',str(p)],
         cwd=Path(get_case(case_id)['path'])/'assets',stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=60)
-    return {'ok':cp.returncode==0,'returncode':cp.returncode,'log':cp.stdout[-16000:],
-            'scope':'Syntax and individual parameter patterns only; runtime/physics not certified.'}
+    return diagnostics.save_check(case_id,{'ok':cp.returncode==0,'returncode':cp.returncode,'log':cp.stdout[-16000:],
+            'scope':'Syntax and individual parameter patterns only; runtime/physics not certified.'})
 
 def worker():
     import fcntl
@@ -70,6 +75,7 @@ def worker():
     try: fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     except BlockingIOError: raise SystemExit('A worker is already running')
     execute("UPDATE jobs SET state='interrupted',note='Worker restarted; prior process requires inspection',ended=? WHERE state IN ('validating','running')",(time.time(),))
+    execute("UPDATE jobs SET state='cancelled',note='Replaced by direct initial-field evaluation' WHERE kind='preview' AND state='queued'")
     active={}; stopping=False
     def stop(*_):
         nonlocal stopping
@@ -95,11 +101,11 @@ def worker():
                 elif item['stage']=='validating' and p.returncode==0:
                     try:
                         handle=(item['root']/'run.log').open('ab',buffering=0)
-                        cmd=[item['binary'],str(item['root']/'input.prm')]
-                        if item['cores']>1: cmd=[item['mpi'],'-np',str(item['cores'])]+cmd
+                        cmd=([sys.executable,'-m','aspect_chat.i2vis_runtime','solve',str(item['root'])] if item['engine']=='i2vis' else [item['binary'],str(item['root']/'input.prm')])
+                        if item['engine']=='aspect' and item['cores']>1: cmd=[item['mpi'],'-np',str(item['cores'])]+cmd
                         item['handle'].close(); item['handle']=handle
                         item['proc']=subprocess.Popen(cmd,cwd=item['root']/'assets',stdin=subprocess.DEVNULL,
-                            stdout=handle,stderr=subprocess.STDOUT,start_new_session=True)
+                            stdout=handle,stderr=subprocess.STDOUT,start_new_session=True,env=item['env'])
                         item['stage']='running'
                         execute("UPDATE jobs SET state='running',pid=? WHERE id=?",(item['proc'].pid,job_id))
                         continue
@@ -125,13 +131,16 @@ def worker():
                 handle=None
                 try:
                     snapshot=json.loads((root/'manifest.json').read_text())
-                    binary=str(Path(snapshot['binary']).expanduser().resolve())
-                    if not Path(binary).is_file(): raise ValueError('ASPECT executable not found')
+                    engine=snapshot.get('engine','aspect');env=os.environ.copy()
+                    env['PYTHONPATH']=str(Path(__file__).resolve().parents[1]);env['OMP_NUM_THREADS']=str(job['cores']) if engine=='i2vis' else '1'
+                    binary=str(Path(snapshot['binary']).expanduser().resolve()) if engine=='aspect' else ''
+                    if engine=='aspect' and not Path(binary).is_file(): raise ValueError('ASPECT executable not found')
                     handle=(root/'validate.log').open('ab',buffering=0)
-                    p=subprocess.Popen([binary,'--validate',str(root/'input.prm')],cwd=root/'assets',
+                    cmd=[sys.executable,'-m','aspect_chat.i2vis_runtime','initialize',str(root)] if engine=='i2vis' else [binary,'--validate',str(root/'input.prm')]
+                    p=subprocess.Popen(cmd,cwd=root/'assets',env=env,
                         stdin=subprocess.DEVNULL,stdout=handle,stderr=subprocess.STDOUT,start_new_session=True)
                     active[job_id]={'proc':p,'stage':'validating','root':root,'handle':handle,'binary':binary,
-                        'kind':job['kind'],
+                        'kind':job['kind'],'engine':engine,'env':env,
                         'mpi':snapshot.get('mpi',cfg['mpi']),'cores':job['cores'],'started':time.time(),'timeout':int(snapshot.get('timeout_seconds',cfg['timeout_seconds']))}
                     execute('UPDATE jobs SET pid=? WHERE id=?',(p.pid,job_id)); used+=job['cores']
                 except Exception as e:

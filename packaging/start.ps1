@@ -39,7 +39,7 @@ if ($Stop) {
     Write-Host 'Stopped. Models and results remain in workspace.'; exit 0
 }
 switch ($arch) { 'aarch64' {$arch='arm64'} 'arm64' {$arch='arm64'} 'x86_64' {$arch='amd64'} 'amd64' {$arch='amd64'} default {throw "Unsupported architecture: $arch"} }
-$image = "aspect-chat:1.1.1-aspect3.1.0-$arch"
+$image = "aspect-chat:2.0.0-aspect3.1.0-$arch"
 if ((Invoke-DockerNative -Arguments @('image','inspect',$image)).Code -ne 0) {
     $archive = Join-Path $PSScriptRoot "images/aspect-chat-$arch.tar.gz"
     if (Test-Path $archive) {
@@ -75,7 +75,7 @@ if ($exists) {
     for ($attempt=0; $attempt -lt 30; $attempt++) {
         if (Test-LocalPort -Port $port) {$port++;continue}
         $runArgs=@('run','-d','--name',$name,'--restart','unless-stopped','--stop-timeout','30',
-            '--label',"aspect-chat.port=$port",'--label','aspect-chat.package=1.1.1',
+            '--label',"aspect-chat.port=$port",'--label','aspect-chat.package=2.0.0',
             '-p',"127.0.0.1:${port}:8517",'--mount',"type=bind,source=$workspace,target=/workspace",
             '-e',"ASPECT_CHAT_HOST_WORKSPACE=$workspace",'-e',"ASPECT_CHAT_PUBLIC_PORT=$port",'-e',"ASPECT_CHAT_INSTANCE=$name",$image)
         $result=Invoke-DockerNative -Arguments $runArgs

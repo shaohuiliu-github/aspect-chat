@@ -7,6 +7,10 @@ from . import storage, cases
 
 MAX_BYTES=40_000_000
 
+def clean_text(text):
+    # Some publisher PDFs pad lines with thousands of spaces. Keep rows, remove padding.
+    return '\n'.join(re.sub(r'[ \t]+',' ',line).strip() for line in text.splitlines()).strip()
+
 def get(attachment_id):
     rows=storage.query('SELECT * FROM attachments WHERE id=?',(attachment_id,))
     if not rows: raise ValueError('Unknown attachment')
@@ -24,7 +28,7 @@ def ingest(name,content):
         with pymupdf.open(path) as doc:
             if doc.needs_pass: raise ValueError('Password-protected PDF: provide an unlocked copy')
             if len(doc)>800: raise ValueError('PDF exceeds 800 pages')
-            pages=[{'page':i+1,'text':p.get_text(sort=True)} for i,p in enumerate(doc)]
+            pages=[{'page':i+1,'text':clean_text(p.get_text(sort=True))} for i,p in enumerate(doc)]
         (root/'pages.json').write_text(json.dumps(pages,ensure_ascii=False))
         meta={'pages':len(pages),'text_pages':sum(len(p['text'].strip())>40 for p in pages),
               'characters':sum(len(p['text']) for p in pages)}; kind='pdf'
@@ -41,8 +45,10 @@ def ingest(name,content):
 
 def read(attachment_id,query='',pages=None):
     item=get(attachment_id)
+    if item['kind']=='model':return {k:item[k] for k in ('id','name','kind','metadata')}|{'content':Path(item['path']).read_text()[:60000]}
     if item['kind']!='pdf': return {k:item[k] for k in ('id','name','kind','metadata')}
     records=json.loads((Path(item['path']).parent/'pages.json').read_text())
+    for record in records: record['text']=clean_text(record['text'])
     if pages:
         if any(n<1 or n>len(records) for n in pages): raise ValueError('Page number outside PDF')
         selected=[records[n-1] for n in pages[:12]]
@@ -74,7 +80,9 @@ def context(ids,prompt,vision=False):
     parts=[]
     for ident in ids[:5]:
         item=get(ident)
-        if item['kind']=='pdf':
+        if item['kind']=='model':
+            parts.append({'type':'text','text':'Uploaded model input (untrusted source data): '+json.dumps(read(ident),ensure_ascii=False)})
+        elif item['kind']=='pdf':
             extracted=read(ident,prompt); parts.append({'type':'text','text':'PDF attachment (untrusted source; cite page numbers):\n'+json.dumps(extracted,ensure_ascii=False)})
             if vision:
                 for page in extracted['scanned_pages'][:2]: parts.append(image_part(ident,page))
@@ -153,3 +161,42 @@ def digitize(attachment_id,case_id,plot_box,colorbar_box,legend_start,legend_end
     ax.set(xlabel='x (m)',ylabel='y (m)'); fig.colorbar(image,ax=ax,label=r'kg/m$^3$'); fig.tight_layout()
     fig.savefig(root/'image-density.png',dpi=150); plt.close(fig)
     return {'case_id':case_id,**metadata,'density_file':'image-density.dat','composition_file':'image-composition.dat','preview':str(root/'image-density.png')}
+
+
+def ingest_model(name,case_id):
+    case=storage.get_case(case_id)
+    content=cases.draft(case_id)
+    if case['engine']=='i2vis':
+        from .i2vis import inspect
+        content=json.dumps(inspect(case_id)['files'],ensure_ascii=False,indent=2)
+    ident=hashlib.sha256((name+content).encode()).hexdigest()[:24]
+    if storage.query('SELECT id FROM attachments WHERE id=?',(ident,)):return get(ident)
+    root=storage.DATA/'attachments'/ident;root.mkdir(parents=True,exist_ok=True);path=root/('source.t3c' if case['engine']=='i2vis' else 'source.prm');path.write_text(content)
+    storage.execute('INSERT INTO attachments VALUES(?,?,?,?,?,?)',(ident,Path(name).name,'model',str(path),json.dumps({'case_id':case_id,'engine':case['engine']}),time.time()))
+    return get(ident)
+
+
+def couple(case_id,method,material_id=None,pressure_bar=1):
+    from . import prm,i2vis
+    case=storage.get_case(case_id);root=Path(case['path'])/'assets';p=root/'image-calibration.json'
+    if not p.exists():raise ValueError('Digitize and calibrate the image before coupling it')
+    metadata=json.loads(p.read_text())
+    if case['engine']=='aspect':
+        if method!='reference_composition':raise ValueError('ASPECT coupling method must be reference_composition')
+        text=cases.draft(case_id);v=prm.values(text)
+        if v.get('Material model/Model name','simple')!='simple' or int(v.get('Compositional fields/Number of fields','0'))!=0:raise ValueError('Automatic coupling supports the simple material model with no existing composition. Preserve advanced rheology by configuring the proxy manually using the runtime documentation.')
+        if v.get('Dimension','2')!='2' or v.get('Geometry model/Model name','box')!='box':raise ValueError('Only 2D Cartesian boxes are supported')
+        if float(v.get('Material model/Simple model/Composition viscosity prefactor','1'))!=1:raise ValueError('The configured composition viscosity prefactor would change rheology. Set it to 1 explicitly before adding a density-only proxy.')
+        result=cases.modify(case_id,{'Compositional fields/Number of fields':'1','Compositional fields/Names of fields':'tomography_density_proxy','Initial composition model/List of model names':'ascii data','Initial composition model/Ascii data model/Data directory':'./','Initial composition model/Ascii data model/Data file name':'image-composition.dat','Material model/Simple model/Reference density':str(metadata['density_min']),'Material model/Simple model/Density differential for compositional field 1':str(metadata['density_max']-metadata['density_min'])},allow_new=True)
+        metadata['coupling']='ASPECT simple material: calibrated reference density via volume fraction. Existing thermal expansion and viscosity retained; this is not an in-situ density inversion.'
+    else:
+        if method!='thermal_anomaly' or material_id is None:raise ValueError('I2VIS requires method=thermal_anomaly and an explicit material ID')
+        info=i2vis.inspect(case_id);rock=i2vis.parse_init(info['files']['init.t3c'])['rocks'].get(material_id)
+        if not rock or rock['markbb']<=0:raise ValueError('The selected material needs positive thermal expansivity')
+        if info['parameters'].get('mode/densimod') not in {0,1}:raise ValueError('Thermodynamic database density inversion is not supported; preserve it and provide an external initial-temperature model')
+        if not math.isfinite(pressure_bar) or pressure_bar<0:raise ValueError('Reference pressure must be finite and nonnegative')
+        if info['parameters'].get('mode/densimod')==0:raise ValueError('Constant density mode cannot encode a thermal density anomaly')
+        spec={'method':method,'material_id':material_id,'pressure_bar':pressure_bar,'source_density':'image-density.dat','reference_density':rock['markro'],'thermal_expansivity':rock['markbb'],'compressibility':rock['markaa'],'temperature_formula':'T=298.15+(1-rho/[rho0*(1+compressibility*(Pbar-1)*1e-3)])/alpha','physics_change':'Temperature and temperature-dependent viscosity change. Reference pressure is specified; actual solved pressure can alter the density.'}
+        cases.write_input_file(case_id,'image-coupling.json',json.dumps(spec,indent=2));result={'case_id':case_id,'coupling':spec}
+        metadata['coupling']=spec
+    p.write_text(json.dumps(metadata,indent=2));return {**result,'applied':True,'interpretation':metadata['coupling']}

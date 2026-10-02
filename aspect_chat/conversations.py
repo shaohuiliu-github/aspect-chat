@@ -4,7 +4,9 @@ from . import agent,storage
 
 def start(prompt,case_id,attachment_ids,lang,session_id=None):
     request_id=storage.uid()
-    storage.add_chat('user',prompt,lang,session_id)
+    from . import attachments
+    files=[{k:v for k,v in attachments.get(ident).items() if k in {'id','name','kind'}} for ident in attachment_ids]
+    storage.add_chat('user',prompt,lang,session_id,files)
     storage.execute('INSERT INTO requests(id,state,lang,created,pid,event,result,error,session_id) VALUES(?,?,?,?,?,?,?,?,?)',
         (request_id,'working',lang,time.time(),os.getpid(),'','','',session_id))
     def run():
@@ -19,7 +21,7 @@ def start(prompt,case_id,attachment_ids,lang,session_id=None):
                 bound_case=case_id
                 for item in result.get('events',[]):
                     output=item.get('result')
-                    if isinstance(output,dict) and output.get('case_id') and item['tool'] in {'load_model','create_model','modify_parameters','digitize_density_map'}:
+                    if isinstance(output,dict) and output.get('case_id') and item['tool'] in {'load_model','create_model','create_i2vis_model','modify_parameters','digitize_density_map','couple_density_map'}:
                         bound_case=output['case_id']
                 storage.execute('UPDATE chat_sessions SET case_id=?,updated=? WHERE id=?',(bound_case,time.time(),session_id))
                 if bound_case:

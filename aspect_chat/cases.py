@@ -26,12 +26,16 @@ def create(name,text,provenance=None,assets=None):
     (root/'assets').mkdir(exist_ok=True)
     (root/'draft.prm').write_text(text)
     (root/'original.prm').write_text(text)
-    execute('INSERT INTO cases VALUES(?,?,?,?,?)',(case_id,name,str(root),time.time(),json.dumps(provenance or {},ensure_ascii=False)))
+    execute('INSERT INTO cases(id,name,path,created,provenance) VALUES(?,?,?,?,?)',(case_id,name,str(root),time.time(),json.dumps(provenance or {},ensure_ascii=False)))
     return {'case_id':case_id,'name':name,'draft':str(root/'draft.prm')}
 
 def load_document(document_id):
     d=knowledge.read_document(document_id)
     if d.get('role')=='reference': raise ValueError('Reference-only source: adapt to the installed ASPECT version before creating a model')
+    if d['source']=='i2vis-templates' and d['path'].endswith('.t3c'):
+        from . import i2vis
+        template=i2vis.templates(Path(d['path']).parent.name)
+        return i2vis.create(Path(d['path']).parent.name,template['init.t3c'],template['mode.t3c'],{'source':d['source'],'version':d['version'],'revision':d['revision'],'path':d['path']})
     if d['kind']=='fragment' or not d['path'].endswith('.prm'): raise ValueError('Select a complete PRM model, not a manual fragment')
     p=Path(d['absolute_path'])
     source=next(s for s in knowledge.sources() if s['label']==d['source'])
@@ -64,9 +68,14 @@ def import_upload(name,content):
     if len(main)==1: return import_local(main[0])
     return {'needs_selection':True,'prm_files':[str(p) for p in prms],'message':'ZIP contains multiple PRM files. Select the entry file via local import.'}
 
-def draft(case_id): return (Path(get_case(case_id)['path'])/'draft.prm').read_text()
+def draft(case_id):
+    case=get_case(case_id)
+    return (Path(case['path'])/('init.t3c' if case['engine']=='i2vis' else 'draft.prm')).read_text()
 
 def save_draft(case_id,text,expected_revision=None):
+    if get_case(case_id)['engine']=='i2vis':
+        from . import i2vis
+        return i2vis.save(case_id,'init.t3c',text,expected_revision)
     with _edit_lock:
         prm.entries(text); root=Path(get_case(case_id)['path'])
         before=draft(case_id)
@@ -78,10 +87,16 @@ def save_draft(case_id,text,expected_revision=None):
         return {'case_id':case_id,'diff':''.join(difflib.unified_diff(before.splitlines(True),text.splitlines(True),fromfile='before',tofile='after'))}
 
 def modify(case_id,changes,allow_new=False):
+    if get_case(case_id)['engine']=='i2vis':
+        from . import i2vis
+        return i2vis.modify(case_id,changes)
     with _edit_lock:
         return save_draft(case_id,prm.patch(draft(case_id),changes,allow_new))
 
 def enqueue(case_id,cores=None,batch='',value=None,kind='simulation',text_override=None,timeout=None):
+    if get_case(case_id)['engine']=='i2vis':
+        from . import i2vis
+        return i2vis.enqueue(case_id,cores,batch,value,kind,timeout)
     cores=int(cores or config()['task_cores'])
     if not 1<=cores<=int(config()['max_total_cores']): raise ValueError('Core request exceeds configured total core budget')
     text=text_override if text_override is not None else draft(case_id); prm.entries(text); job_id=uid()
@@ -91,7 +106,9 @@ def enqueue(case_id,cores=None,batch='',value=None,kind='simulation',text_overri
     out=root/'output'; out.mkdir()
     text=prm.patch(text,{'Output directory':str(out)},allow_new=True)
     (root/'input.prm').write_text(text)
-    (root/'manifest.json').write_text(json.dumps({'job_id':job_id,'case_id':case_id,'cores':cores,
+    from . import physics
+    identity=physics.snapshot(case_id,root)
+    (root/'manifest.json').write_text(json.dumps({**identity,'engine':'aspect','job_id':job_id,'case_id':case_id,'cores':cores,
         'binary':config()['binary'],'source_root':config()['source_root'],'mpi':config()['mpi'],
         'timeout_seconds':timeout or config()['timeout_seconds'],'created':time.time(),'kind':kind,
         'value':value,'output_directory':str(out)},ensure_ascii=False,indent=2))
@@ -100,6 +117,9 @@ def enqueue(case_id,cores=None,batch='',value=None,kind='simulation',text_overri
     return {'job_id':job_id,'state':'queued','output_directory':str(out),'input_snapshot':str(root/'input.prm')}
 
 def sweep(case_id,path,start,stop,count=5,sampling='log',cores=None,index=None):
+    if get_case(case_id)['engine']=='i2vis':
+        from . import i2vis
+        return i2vis.sweep(case_id,path,start,stop,count,sampling,cores,index)
     cores=int(cores or config()['task_cores'])
     start=float(start); stop=float(stop); count=int(count)
     if not math.isfinite(start) or not math.isfinite(stop) or not 2<=count<=64: raise ValueError('Finite range and 2–64 samples required')

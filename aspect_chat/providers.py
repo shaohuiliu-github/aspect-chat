@@ -107,7 +107,8 @@ def complete(client,info,key,messages,tools):
             if b['type']=='text': text.append(b['text'])
             if b['type']=='tool_use': calls.append({'id':b['id'],'type':'function','function':{'name':b['name'],'arguments':json.dumps(b['input'])}})
         return {'role':'assistant','content':'\n'.join(text),'tool_calls':calls,'_claude_content':data.get('content',[])}
-    payload={'model':info['model'],'messages':messages,'tools':tools,'tool_choice':'auto'}
+    payload={'model':info['model'],'messages':messages}
+    if tools:payload.update(tools=tools,tool_choice='auto')
     if info['id']=='qwen': payload['enable_thinking']=False
     if info['id']=='kimi' and 'k2.5' in info['model']: payload['thinking']={'type':'disabled'}
     data=check(client.post(info['url'].rstrip('/')+'/chat/completions',headers=headers(info,key),json=payload),key)

@@ -3,7 +3,7 @@ import hashlib, json, os, re, shutil, sqlite3, time
 from .storage import DATA
 
 EXTENSIONS={'.prm','.md','.rst','.tex','.dox','.xml','.cc','.h','.wb',
-            '.cpp','.hpp','.c','.f','.f90','.py','.sh','.cmake','.bib','.json','.ipynb','.grid','.txt'}
+            '.cpp','.hpp','.c','.f','.f90','.py','.sh','.cmake','.bib','.json','.ipynb','.grid','.txt','.t3c'}
 SKIP={'build','.git','__pycache__','node_modules','output','outputs'}
 CODE_EXTENSIONS={'.cc','.h','.cpp','.hpp','.c','.f','.f90','.py','.sh','.cmake'}
 
@@ -54,7 +54,7 @@ def register(root,label,version,origin='local',role='runtime',revision='',defaul
                     text='\n\n'.join(''.join(cell.get('source',[])) for cell in notebook.get('cells',[]))
                 except (ValueError,TypeError): continue
             # Tables remain available as input assets; index their headers and format, not megabytes of numbers.
-            if p.suffix.lower() in {'.grid','.txt'} and len(text)>24000:
+            if p.suffix.lower() in {'.grid','.txt','.t3c'} and len(text)>24000:
                 text=text[:12000]+'\n\n[Data excerpt only; full input file is bundled at '+str(rel)+']'
             if p.suffix=='.prm' and ('doc' in rel.parts or '.part.' in p.name): kind='fragment'
             elif p.suffix=='.prm': kind='test' if 'tests' in rel.parts else 'benchmark' if 'benchmarks' in rel.parts else 'model'
@@ -104,7 +104,7 @@ def expanded_terms(query):
     stop={'the','a','an','of','to','and','i','my','want','please','model','set','some','how','with','from'}
     return list(dict.fromkeys(t.lower() for t in terms if t.lower() not in stop))[:30]
 
-def search(query, limit=8, source=None, kind=None):
+def search(query, limit=8, source=None, kind=None, engine=None):
     terms=expanded_terms(query)
     if not terms: return []
     # Escape input, never treat user text as an FTS query language expression.
@@ -115,14 +115,16 @@ def search(query, limit=8, source=None, kind=None):
     JOIN sources s ON s.label=d.source
     WHERE chunks MATCH ?'''; args=[match]
     if source: sql+=' AND d.source=?'; args.append(source)
-    else: sql+=" AND s.role='runtime'"
+    if engine=='i2vis': sql+=" AND d.source LIKE 'i2vis%'"
+    elif engine=='aspect': sql+=" AND d.source NOT LIKE 'i2vis%'"
+    if not source: sql+=" AND s.role='runtime'"
     if kind: sql+=' AND d.kind=?'; args.append(kind)
     else: sql+=" AND d.kind NOT IN ('test','fragment','code')"
     sql+=' ORDER BY score LIMIT ?'; args.append(max(50,min(limit,20)*20))
     with connect() as c:
         rows=[dict(x) for x in c.execute(sql,args)]
         # FTS's limited candidate set can omit the exact parameter among many generic matches.
-        if source in (None,'runtime-parameters') and kind in (None,'manual'):
+        if engine!='i2vis' and source in (None,'runtime-parameters') and kind in (None,'manual'):
             exact=c.execute('''SELECT d.id,d.source,d.path,d.kind,s.version,s.role,s.revision,
             substr(d.body,1,500) AS heading,substr(d.body,1,1500) AS excerpt,0 AS score
             FROM documents d JOIN sources s ON s.label=d.source
@@ -191,8 +193,21 @@ def parameter_info(path):
     if not p.exists(): raise ValueError('Runtime parameter export unavailable')
     obj=json.loads(p.read_text())
     for part in path.split('/'):
-        if not isinstance(obj,dict) or part not in obj: raise ValueError('Unknown runtime parameter path')
+        if not isinstance(obj,dict) or part not in obj:
+            import difflib
+            available=list(obj) if isinstance(obj,dict) else []
+            return {'path':path,'found':False,'similar_names':difflib.get_close_matches(part,available,n=8),'available_names':available[:80]}
         obj=obj[part]
-    if not isinstance(obj,dict) or 'documentation' not in obj: raise ValueError('Path identifies a subsection, not a parameter')
+    if not isinstance(obj,dict): raise ValueError('Invalid parameter path')
+    if 'documentation' not in obj:
+        def declarations(tree,prefix):
+            result=[]
+            for name,value in tree.items():
+                if not isinstance(value,dict):continue
+                p=prefix+'/'+name
+                if 'documentation' in value:result.append({'path':p,'default':value.get('default_value'),'documentation':value['documentation'][:1500]})
+                else:result.extend(declarations(value,p))
+            return result
+        return {'path':path,'subsection':True,'parameters':declarations(obj,path)}
     version=next((s['version'] for s in sources() if s['label']=='runtime-parameters'),'unknown')
     return {'path':path,'source':f'ASPECT {version} runtime declarations',**obj}

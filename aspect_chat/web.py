@@ -3,7 +3,7 @@ from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit,parse_qs
 import argparse,base64,hashlib,json,mimetypes,os,secrets,subprocess,sys,threading,time
-from . import attachments,cases,conversations,i18n,knowledge,portable,previews,providers,runner,sessions,storage
+from . import attachments,cases,conversations,i18n,knowledge,portable,previews,providers,runner,sessions,storage,diagnostics,physics,i2vis
 
 WEB=storage.ROOT/'web'
 TOKEN=secrets.token_urlsafe(32)
@@ -22,7 +22,7 @@ def ensure_worker():
     return alive
 
 def job_list():
-    return storage.query("SELECT j.id,j.case_id,j.state,j.created,j.cores,c.name AS model_name FROM jobs j LEFT JOIN cases c ON j.case_id=c.id WHERE j.kind='simulation' ORDER BY j.created DESC LIMIT 100")
+    return storage.query("SELECT j.id,j.case_id,j.state,j.created,j.cores,j.note,c.engine,c.name AS model_name FROM jobs j LEFT JOIN cases c ON j.case_id=c.id WHERE j.kind='simulation' ORDER BY j.created DESC LIMIT 100")
 
 def connection():
     info=providers.current()
@@ -38,8 +38,8 @@ def bootstrap(lang):
     return {'lang':lang,'text':text,'runtime':runtime,'connection':connection(),
             'providers':[{'id':key,'name':value['name']} for key,value in providers.PROVIDERS.items()],
             'settings':{k:cfg[k] for k in ('task_cores','max_total_cores','timeout_seconds','binary','source_root','mpi')},
-            'storage':portable.host_path(storage.DATA),'sessions':sessions.list_all(lang),
-            'cases':storage.query('SELECT id,name FROM cases ORDER BY created DESC'),
+            'storage':portable.host_path(storage.DATA),'sessions':storage.query('SELECT * FROM chat_sessions ORDER BY updated DESC'),
+            'cases':storage.query('SELECT id,name,engine FROM cases ORDER BY created DESC'),
             'attachments':storage.query('SELECT id,name,kind FROM attachments ORDER BY created DESC LIMIT 100'),
             'knowledge':knowledge.summary(),'sources':knowledge.sources(),'jobs':job_list()}
 
@@ -62,13 +62,14 @@ class Handler(BaseHTTPRequestHandler):
 
     def allowed_hosts(self):
         ports={self.server.server_port,int(os.environ.get('ASPECT_CHAT_PUBLIC_PORT',self.server.server_port))}
+        ports.update(int(p) for p in os.environ.get('ASPECT_CHAT_PUBLIC_PORTS','').split(',') if p.strip())
         return {f'{host}:{port}' for host in ('127.0.0.1','localhost') for port in ports}
 
     def do_GET(self):
         if not self.check_host(): self.send({'error':'Invalid host'},403); return
         try:
             path=urlsplit(self.path); args={k:v[0] for k,v in parse_qs(path.query).items()}
-            if path.path in {'/','/index.html','/app.js','/style.css'}:
+            if path.path in {'/','/index.html','/app.js','/style.css','/logo.svg'}:
                 name='index.html' if path.path=='/' else path.path[1:]
                 content=(WEB/name).read_bytes()
                 if name=='index.html': content=content.replace(b'__CSRF_TOKEN__',TOKEN.encode())
@@ -81,7 +82,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(bootstrap(lang)); return
             if path.path=='/api/conversation':
                 session=sessions.get(args['id'])
-                messages=storage.query('SELECT id,role,content FROM chats WHERE session_id=? ORDER BY id',(session['id'],))
+                messages=storage.query('SELECT id,role,content,attachments FROM chats WHERE session_id=? ORDER BY id',(session['id'],))
+                for message in messages:message['attachments']=json.loads(message['attachments'] or '[]')
                 requests=storage.query('SELECT id FROM requests WHERE session_id=? ORDER BY created DESC LIMIT 1',(session['id'],))
                 request=conversations.status(requests[0]['id']) if requests else None
                 diff=''
@@ -89,7 +91,7 @@ class Handler(BaseHTTPRequestHandler):
                     for event in request['result'].get('events',[]):
                         result=event.get('result')
                         if isinstance(result,dict) and result.get('diff'): diff=result['diff']
-                self.send({'session':session,'messages':messages,'request':request,'diff':diff}); return
+                self.send({'session':session,'messages':messages,'request':request,'diff':diff,'model_status':diagnostics.model_status(session['case_id'])}); return
             if path.path=='/api/jobs':
                 try: alive=time.time()-json.loads((storage.DATA/'worker_heartbeat.json').read_text())['time']<10
                 except (OSError,ValueError,KeyError): alive=False
@@ -98,7 +100,10 @@ class Handler(BaseHTTPRequestHandler):
                 result=runner.status(args['id']); result['output_directory']=portable.host_path(result['output_directory'])
                 self.send(result); return
             if path.path=='/api/model':
-                case=storage.get_case(args['id']); text=cases.draft(case['id'])
+                case=storage.get_case(args['id']);filename=args.get('filename','init.t3c' if case['engine']=='i2vis' else 'draft.prm')
+                allowed=i2vis.FILES if case['engine']=='i2vis' else {'draft.prm'}
+                if filename not in allowed:raise ValueError('Unknown model file')
+                text=(Path(case['path'])/filename).read_text()
                 try:
                     with _preview_lock: previews.schedule(case['id'])
                 except Exception as e: preview_error=str(e)
@@ -107,14 +112,16 @@ class Handler(BaseHTTPRequestHandler):
                 if preview:
                     preview['files']={key:f"/api/field?job={preview['job_id']}&field={key}" for key in preview['files']}
                 self.send({'case':case,'text':text,'revision':hashlib.sha256(text.encode()).hexdigest(),
-                           'preview':preview,'preview_error':preview_error,'path':portable.host_path(Path(case['path'])/'draft.prm')}); return
+                           'preview':preview,'preview_error':preview_error,'filename':filename,'files':sorted(allowed),'physics':physics.report(case['id']),'path':portable.host_path(Path(case['path'])/filename)}); return
             if path.path=='/api/field':
                 job=args['job']; field=args['field']
                 if field not in previews.FIELDS or len(job)!=12 or not all(c in '0123456789abcdef' for c in job): raise ValueError('Invalid field')
-                image=storage.DATA/'runs'/job/'initial-fields'/(field+'.png')
+                image=storage.DATA/'previews'/job/'initial-fields'/(field+'.png')
                 self.send(image.read_bytes(),content_type='image/png'); return
+            if path.path=='/api/attachment':
+                item=attachments.get(args['id']);self.send(Path(item['path']).read_bytes(),content_type=mimetypes.guess_type(item['path'])[0] or 'text/plain; charset=utf-8');return
             if path.path=='/api/knowledge':
-                self.send(knowledge.search(args.get('q',''),limit=8,source=args.get('source') or None,kind=args.get('kind') or None)); return
+                self.send(knowledge.search(args.get('q',''),limit=8,source=args.get('source') or None,kind=args.get('kind') or None,engine=args.get('engine'))); return
             self.send({'error':'Not found'},404)
         except (ValueError,KeyError,OSError) as e: self.send({'error':str(e)},400)
         except Exception as e: self.send({'error':str(e)},500)
@@ -130,8 +137,19 @@ class Handler(BaseHTTPRequestHandler):
             if size<1 or size>57*1024*1024: raise ValueError('Request too large')
             body=json.loads(self.rfile.read(size)); path=urlsplit(self.path).path
             if path=='/api/new':
-                if body.get('lang','zh') not in {'zh','en'}: raise ValueError('Invalid language')
-                self.send(sessions.create(body.get('lang','zh'))); return
+                if body.get('lang','en') not in {'zh','en'}: raise ValueError('Invalid language')
+                self.send(sessions.create(body.get('lang','en'),body.get('engine','aspect'))); return
+            if path=='/api/delete-chat':sessions.delete(body['id']);self.send({'ok':True});return
+            if path=='/api/engine':
+                engine=body['engine']
+                if engine not in {'aspect','i2vis'}:raise ValueError('Unknown solver')
+                current=sessions.get(body['session_id']) if body.get('session_id') else None
+                if current and not current['case_id'] and not storage.query('SELECT id FROM chats WHERE session_id=?',(current['id'],)):
+                    storage.execute('UPDATE chat_sessions SET engine=? WHERE id=?',(engine,current['id']));self.send(sessions.get(current['id']))
+                else:self.send(sessions.create(body.get('lang','en'),engine))
+                return
+            if path=='/api/validate':self.send(runner.validation(body['case_id']));return
+            if path=='/api/run':self.send(cases.enqueue(body['case_id']));return
             if path=='/api/bind':
                 sessions.bind(body['session_id'],body.get('case_id')); self.send({'ok':True}); return
             if path=='/api/chat':
@@ -142,7 +160,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.send({'request_id':sessions.start(body['session_id'],prompt,ids)}); return
             if path=='/api/language':
                 if body['lang'] not in {'zh','en'}: raise ValueError('Invalid language')
-                storage.save_config({'language':body['lang']}); self.send({'ok':True}); return
+                storage.save_config({'language':body['lang']})
+                if body.get('session_id'):storage.execute('UPDATE chat_sessions SET lang=? WHERE id=?',(body['lang'],body['session_id']))
+                self.send({'ok':True}); return
             if path=='/api/provider':
                 providers.select(body['provider'],model=body.get('model'))
                 self.send(connection()); return
@@ -161,7 +181,12 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/api/upload':
                 name=Path(body['name']).name; content=base64.b64decode(body['content'],validate=True)
                 if len(content)>40*1024*1024: raise ValueError('Maximum file size: 40 MB')
-                result=cases.import_upload(name,content) if name.lower().endswith(('.prm','.zip')) else attachments.ingest(name,content)
+                session=sessions.get(body['session_id']) if body.get('session_id') else None
+                engine=session['engine'] if session else 'aspect'
+                if name.lower().endswith(('.t3c','.zip')) and engine=='i2vis':result=i2vis.import_upload(name,content,session['case_id'] if session else None)
+                elif name.lower().endswith(('.prm','.zip')) and engine=='aspect':result=cases.import_upload(name,content)
+                else:result=attachments.ingest(name,content)
+                if result.get('case_id'):result['id']=attachments.ingest_model(name,result['case_id'])['id']
                 if result.get('needs_selection'):
                     result['prm_files']=[portable.host_path(p) for p in result['prm_files']]
                 if result.get('case_id') and body.get('session_id'): sessions.bind(body['session_id'],result['case_id'])
@@ -175,7 +200,9 @@ class Handler(BaseHTTPRequestHandler):
                 if body.get('session_id'): sessions.bind(body['session_id'],result['case_id'])
                 self.send(result); return
             if path=='/api/save':
-                try: result=cases.save_draft(body['case_id'],body['text'],expected_revision=body['revision'])
+                try:
+                    if storage.get_case(body['case_id'])['engine']=='i2vis':result=i2vis.save(body['case_id'],body.get('filename','init.t3c'),body['text'],body['revision'])
+                    else:result=cases.save_draft(body['case_id'],body['text'],expected_revision=body['revision'])
                 except cases.RevisionConflict:
                     self.send({'error':i18n.t('file_conflict',storage.config()['language'])},409); return
                 self.send(result); return

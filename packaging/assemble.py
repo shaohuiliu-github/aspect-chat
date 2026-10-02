@@ -4,7 +4,7 @@ import argparse, json, shutil, sys
 
 APP=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser();parser.add_argument('destination',type=Path)
-parser.add_argument('--parameters',type=Path);parser.add_argument('--extras',type=Path,required=True);args=parser.parse_args()
+parser.add_argument('--i2vis',type=Path,required=True);parser.add_argument('--parameters',type=Path);parser.add_argument('--extras',type=Path,required=True);args=parser.parse_args()
 dest=args.destination.resolve();dest.mkdir(parents=True,exist_ok=True)
 for name in ('aspect_chat','web'):
     shutil.copytree(APP/name,dest/'app'/name,dirs_exist_ok=True,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
@@ -47,6 +47,19 @@ manifest={'aspect_version':'3.1.0','base_image':'geodynamics/aspect:v3.1.0',
              'runtime_parameter_entries':len(list((kb/'runtime-manual/entries').glob('*.md'))),
              'official_api_pages':len(api_manifest['pages']),'wiki_mode':'navigation records; article text not redistributed'},
  'retrieved':'2026-10-02','development_sources_require_explicit_selection':True}
+(kb/'manifest.json').write_text(json.dumps(manifest,indent=2))
+shutil.copytree(args.i2vis,kb/'i2vis-source',dirs_exist_ok=True,ignore=shutil.ignore_patterns('.git','._*','__pycache__'))
+from aspect_chat import i2vis
+import subprocess
+subprocess.run([sys.executable,str(APP/'packaging/i2vis/templates.py'),str(kb/'i2vis-source')],check=True)
+subprocess.run([sys.executable,str(APP/'packaging/i2vis/catalog.py'),str(kb/'i2vis-source'),str(kb/'i2vis-manual')],check=True,cwd=APP)
+for label,root,kind in [('i2vis-source',kb/'i2vis-source','code'),('i2vis-templates',kb/'i2vis-source/templates','model'),('i2vis-manual',kb/'i2vis-manual','manual')]:
+    results.append(knowledge.register(root,label,i2vis.REVISION,'supplied publicly authorized runtime',revision=i2vis.REVISION,default_kind=kind))
+for label,url,revision in [('i2vis-public-i2elvis','https://github.com/FormingWorlds/i2elvis_planet','e2c8487015db5bfea80ec4c178f30bf6c32541c4'),('i2vis-public-dripping','https://github.com/YirenGou/Gou-and-Liu-2026-Dripping-Tectonics','65b9b4b4c26ae8b718f821b1c9dd0fc3642e3c63')]:
+    if (args.extras/label).exists():
+        shutil.copytree(args.extras/label,kb/label,dirs_exist_ok=True)
+        results.append(knowledge.register(kb/label,label,'reference branch',url,role='reference',revision=revision,default_kind='manual'))
+manifest.update({'package_version':'2.0.0','knowledge':knowledge.summary(),'sources':results,'i2vis':{'revision':i2vis.REVISION,'backend':'SuiteSparse UMFPACK portable PARDISO adapter','source_owner_permission':'user confirmed; documentary evidence pending'}})
 (kb/'manifest.json').write_text(json.dumps(manifest,indent=2))
 # All stored knowledge roots must survive a package relocation.
 with knowledge.connect() as c:

@@ -1,0 +1,112 @@
+{
+  "aspect_version": "3.1.0",
+  "base_image": "geodynamics/aspect:v3.1.0",
+  "base_digest": "sha256:a3b599ac1d20d2a150f567a31d39591de18cf0c7e31fa9e9807d07dc291526c4",
+  "knowledge": {
+    "documents": 13484,
+    "models": 102,
+    "sources": 8
+  },
+  "sources": [
+    {
+      "source": "official-3.1.0",
+      "version": "3.1.0",
+      "role": "runtime",
+      "revision": "",
+      "documents": 4478,
+      "categories": {
+        "manual": 782,
+        "benchmark": 155,
+        "code": 1780,
+        "fragment": 147,
+        "model": 102,
+        "test": 1512
+      }
+    },
+    {
+      "source": "official-manual-3.1.0",
+      "version": "3.1.0",
+      "role": "runtime",
+      "revision": "",
+      "documents": 293,
+      "categories": {
+        "manual": 293
+      }
+    },
+    {
+      "source": "runtime-parameters",
+      "version": "3.1.0",
+      "role": "runtime",
+      "revision": "",
+      "documents": 1696,
+      "categories": {
+        "manual": 1696
+      }
+    },
+    {
+      "source": "official-api-3.1.0",
+      "version": "3.1.0",
+      "role": "runtime",
+      "revision": "",
+      "documents": 1160,
+      "categories": {
+        "code": 1160
+      }
+    },
+    {
+      "source": "world-builder-runtime",
+      "version": "1.1.1",
+      "role": "runtime",
+      "revision": "",
+      "documents": 18,
+      "categories": {
+        "manual": 18
+      }
+    },
+    {
+      "source": "model-catalog",
+      "version": "3.1.0",
+      "role": "runtime",
+      "revision": "",
+      "documents": 1798,
+      "categories": {
+        "manual": 1798
+      }
+    },
+    {
+      "source": "aspect-main",
+      "version": "3.2.0-pre",
+      "role": "reference",
+      "revision": "982977e2070ab0b100ad58aa8213cb304948158e",
+      "documents": 4027,
+      "categories": {
+        "manual": 442,
+        "benchmark": 155,
+        "code": 1781,
+        "fragment": 146,
+        "model": 102,
+        "test": 1401
+      }
+    },
+    {
+      "source": "aspect-wiki",
+      "version": "snapshot-2026-10-02",
+      "role": "reference",
+      "revision": "9b4e08a8b977ece3b4ffe6dafc5fd5a1f2e607c3",
+      "documents": 14,
+      "categories": {
+        "manual": 14
+      }
+    }
+  ],
+  "user_data_included": false,
+  "coverage": {
+    "official_prm_files": 1796,
+    "indexed_prm_files": 1796,
+    "runtime_parameter_entries": 1696,
+    "official_api_pages": 1159,
+    "wiki_mode": "navigation records; article text not redistributed"
+  },
+  "retrieved": "2026-10-02",
+  "development_sources_require_explicit_selection": true
+}

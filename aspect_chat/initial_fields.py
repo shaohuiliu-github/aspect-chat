@@ -98,7 +98,7 @@ def aspect(case):
     n=int(v.get('Compositional fields/Number of fields','0'));weights=np.ones((1,*x.shape))
     try:
         if n:
-            comp=np.stack([initial('Initial composition model',i) for i in range(n)]);comp=np.maximum(0,comp);total=comp.sum(axis=0);comp=comp/np.maximum(1,total)
+            comp=np.stack([initial('Initial composition model',i) for i in range(n)]);rawcomp=comp.copy();comp=np.maximum(0,comp);total=comp.sum(axis=0);comp=comp/np.maximum(1,total)
             weights=np.concatenate((np.maximum(0,1-comp.sum(axis=0))[None,:,:],comp))
     except Exception as e:
         errors['density']=errors['viscosity']='Composition unavailable: '+str(e);weights=None
@@ -116,7 +116,7 @@ def aspect(case):
             if 'temperature' not in fields:raise ValueError('Temperature is needed for thermally dependent density')
             tref=float(v.get(base+'Reference temperature','293'))
             fields['density']=(weights*rho*(1-alpha*(fields['temperature'][None,:,:]-tref))).sum(axis=0)
-            if material=='simple' and n:fields['density']+=weights[1]*float(v.get(base+'Density differential for compositional field 1','0'))
+            if material=='simple' and n:fields['density']+=rawcomp[0]*float(v.get(base+'Density differential for compositional field 1','0'))
             notes.append('Density: volume-weighted reference densities with linear thermal expansion; pressure compressibility excluded. Reference temperature '+str(tref)+' K.')
         except Exception as e:errors['density']=str(e)
         try:
@@ -126,7 +126,7 @@ def aspect(case):
                     if tref==0:raise ValueError('Nonzero thermal viscosity exponent with zero reference temperature')
                     eta=eta*np.clip(np.exp(-beta*(fields['temperature'][None,:,:]-tref)/tref),float(v.get(base+'Minimum thermal prefactor','1e-2')) or 0,float(v.get(base+'Maximum thermal prefactor','1e2')) or np.inf)
                 fields['viscosity']=(weights*eta).sum(axis=0)
-                if n:fields['viscosity']*=float(v.get(base+'Composition viscosity prefactor','1'))**weights[1]
+                if n:fields['viscosity']*=float(v.get(base+'Composition viscosity prefactor','1'))**rawcomp[0]
                 notes.append('Simple-model viscosity from the configured reference and thermal exponent; no velocity field is solved.')
             else:
                 # Explicit diagnostic strain rate and P=0. Do not invent a self-consistent viscosity.
@@ -166,10 +166,17 @@ def i2vis(case):
             value=(t[1]+(t[3]-t[1])*f)-erfc((y-top)/(2*np.sqrt(np.maximum(t[6]*age,1))))*((t[1]-t[0])*(1-f)+(t[3]-t[2])*f)
         else:raise ValueError('Unsupported direct temperature structure '+str(kind))
         T[mask]=value[mask]
+    mode=solver.parse_mode((Path(case['path'])/'mode.t3c').read_text())['parameters'];errors={}
     fields={'temperature':T};rho=np.full(x.shape,np.nan);eta=rho.copy()
     for rid,r in a['rocks'].items():
-        mask=ids==rid;rho[mask]=r['markro']*(1-r['markbb']*(T[mask]-298.15))
-        eta[mask]=max(r['markn0'],min(r['markn1'],abs(r['marknu'])))
+        mask=ids==rid
+        if not mask.any():continue
+        density_mode=mode.get('mode/densimod',1)
+        rho[mask]=r['markro'] if density_mode==0 else r['markro']*(1-r['markbb']*(T[mask]-298.15))*(1-r['markaa']*1e-3)
+        if density_mode>=2:errors['density']='Thermodynamic phase-table density is not implemented by the direct evaluator.'
+        if r['markn0']==r['markn1']:eta[mask]=r['markn0']
+        elif r['markdh']==0 and r['markdv']==0 and (r['markss']==0 or r['markmm']==1) and r['marknu']>0:eta[mask]=np.clip(r['marknu'],r['markn0'],r['markn1'])
+        else:errors['viscosity']='This nonlinear I2VIS rheology is not implemented by the direct evaluator. Its marknu coefficient must not be displayed as viscosity.'
     fields.update(density=rho,viscosity=eta)
     coupling=Path(case['path'])/'assets/image-coupling.json'
     if coupling.exists():
@@ -177,7 +184,8 @@ def i2vis(case):
         spec=json.loads(coupling.read_text());r=a['rocks'][spec['material_id']];mask=ids==spec['material_id'];target=ascii_field(coupling.parent,'image-density.dat',x,y)
         fields['density'][mask]=target[mask]
         fields['temperature'][mask]=298.15+(1-target[mask]/(r['markro']*(1+r['markaa']*(spec['pressure_bar']-1)*1e-3)))/r['markbb']
-    return x,y,fields,{},['I2VIS: Cartesian y is depth downward; source type-0/type-4 initial temperature. Density uses markro and markbb at P=0. Viscosity is the bounded marknu reference, not the nonlinear effective viscosity. Thermodynamic phase diagrams and hydration are not evaluated.'],True
+    for key in errors:fields.pop(key,None)
+    return x,y,fields,errors,['I2VIS: Cartesian y is depth downward; source type-0/type-4 initial temperature. Density uses markro and markbb at P=0. Viscosity is drawn only for fixed bounds or simple Newtonian laws; nonlinear coefficients are not treated as viscosity. Thermodynamic phase diagrams and hydration are not evaluated.'],True
 
 def render(case,target):
     import os,json
@@ -201,7 +209,7 @@ def render(case,target):
         if note.startswith('Density:'):localized.append('密度：参考密度按体积分数混合，并计入线性热膨胀；不计压缩性。参考温度 '+note.rsplit('temperature ',1)[-1])
         elif note.startswith('Simple-model viscosity'):localized.append('简单材料黏度：根据输入的参考黏度和温度指数计算；不求解速度场。')
         elif note.startswith('Reference creep viscosity:'):localized.append('参考蠕变黏度：使用输入的参考应变率，压力为 0 Pa，调和混合；不计塑性屈服、弱化、相变、弹性及速度场耦合。它不是模拟求解得到的有效黏度。')
-        elif note.startswith('I2VIS:'):localized.append('I2VIS：纵坐标向下为深度；读取类型 0/4 的初始温度。密度由参考密度与热膨胀系数在零压力下计算；黏度是限制在上下限内的参考系数。不计算热力学相图和水化过程。')
+        elif note.startswith('I2VIS:'):localized.append('I2VIS：纵坐标向下为深度；读取类型 0/4 的初始温度。密度由参考密度与热膨胀系数在零压力下计算；黏度仅绘制固定上下限或简单牛顿流变；不把非线性流变系数当成黏度。不计算热力学相图和水化过程。')
         else:localized.append(note)
     metadata={'source':'Direct evaluation of input parameters; no simulator launched','ranges':ranges,'notes':notes,'notes_zh':localized,'field_errors':errors,'files':files}
     (target/'metadata.json').write_text(json.dumps(metadata,indent=2));return metadata

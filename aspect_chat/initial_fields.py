@@ -38,6 +38,7 @@ def ternary(expr):
 
 def evaluate(expr,variables):
     expr=ternary(expr).replace('^','**').replace('&&',' and ').replace('||',' or ')
+    expr=re.sub(r'\bif\s*\(', 'where(', expr)
     expr=re.sub(r'!(?!=)',' not ',expr).strip();tree=ast.parse(expr,mode='eval')
     if len(list(ast.walk(tree)))>800:raise ValueError('Function too complex for the direct preview')
     def walk(n):
@@ -95,8 +96,53 @@ def aspect(case):
     x,y=np.meshgrid(np.linspace(origin[0],origin[0]+w,160),np.linspace(origin[1],origin[1]+h,100));assets=Path(case['path'])/'assets'
     mid_y=float(v.get('Geometry model/Box/Box origin Y coordinate','0'))+float(v.get('Geometry model/Box/Y extent','1'))/2
     if dimension==3:notes.append(f'3D central slice: x-z plane, y={mid_y:g} m. This is one section, not a volume rendering.')
+    def adiabatic_initial():
+        # Restricted analytic branch of ASPECT 3.1.0 initial_temperature/adiabatic.cc.
+        # Refuse any setting that needs an unimplemented material/adiabat evaluation.
+        base='Initial temperature model/Adiabatic/'
+        if 'adiabatic heating' in v.get('Heating model/List of model names',''):
+            raise ValueError('Direct adiabatic preview does not implement adiabatic heating')
+        if v.get('Formulation/Temperature equation','real density')!='real density':
+            raise ValueError('Direct adiabatic preview requires the real-density temperature equation')
+        if v.get(base+'Cooling model','half-space cooling')!='half-space cooling' or v.get(base+'Top boundary layer age model','constant')!='constant':
+            raise ValueError('Direct adiabatic preview supports constant-age half-space cooling only')
+        if any(float(v.get(base+k,'0'))!=0 for k in ('Age bottom boundary layer','Amplitude','Subadiabaticity')):
+            raise ValueError('Direct adiabatic preview does not implement bottom/perturbation corrections')
+        expressions=v.get(base+'Function/Function expression','0').split(';')
+        expected=max(1,int(v.get('Compositional fields/Number of fields','0')))
+        if len(expressions)!=expected:raise ValueError('Adiabatic reference composition requires one expression per compositional field')
+        if any(float(e.strip())!=0 for e in expressions):
+            raise ValueError('Direct adiabatic preview needs a zero reference composition')
+        material=v.get('Material model/Model name','simple')
+        if material!='visco plastic':raise ValueError('Direct adiabatic preview currently requires visco plastic constant thermal properties')
+        mb='Material model/Visco Plastic/'
+        if v.get(mb+'Define thermal conductivities','false').lower()!='true' or any(float(a)!=0 for a in v.get(mb+'Compressibilities','0').split(',')):
+            raise ValueError('Direct adiabatic preview needs explicit conductivities and zero compressibility')
+        first=lambda k,default:float(v.get(mb+k,default).split(',')[0])
+        potential=float(v.get('Adiabatic surface temperature','1600'))
+        rho=first('Densities','3300')*(1-first('Thermal expansivities','3.5e-5')*(potential-float(v.get(mb+'Reference temperature','293'))))
+        kappa=first('Thermal conductivities','4.7')/(rho*first('Heat capacities','1250'))
+        age=float(v.get(base+'Age top boundary layer','0'))
+        if v.get('Use years instead of seconds','false').lower()=='true':age*=31557600
+        result=np.full(x.shape,potential,dtype=float)
+        if age>0:
+            if kappa<=0:raise ValueError('Nonpositive diffusivity for half-space cooling')
+            if v.get('Boundary temperature model/List of model names','box')!='box':raise ValueError('Direct adiabatic preview requires box boundary temperatures')
+            surface=float(v.get('Boundary temperature model/Box/Top temperature','0'))
+            bottom=float(v.get('Boundary temperature model/Box/Bottom temperature','1'))
+            result+=(min(surface,bottom)-potential)*erfc((origin[1]+h-y)/(2*np.sqrt(kappa*age)))
+        notes.append('ASPECT 3.1.0 analytic initial adiabat branch: no adiabatic heating, constant-age half-space cooling, zero reference composition, explicit constant conductivity. Diffusivity='+str(kappa)+' m²/s. No simulation was launched.')
+        return result
     def initial(prefix,index=0):
         model=v.get(prefix+'/List of model names') or v.get(prefix+'/Model name','function')
+        if prefix=='Initial temperature model' and 'adiabatic' in [m.strip() for m in model.split(',')]:
+            models=[m.strip() for m in model.split(',')]
+            if any(m not in {'adiabatic','function'} for m in models) or any(op.strip()!='add' for op in v.get(prefix+'/List of model operators','add').split(',')):
+                raise ValueError('Direct adiabatic/function preview supports additive composition only')
+            total=np.zeros(x.shape)
+            for item in models:
+                total+=adiabatic_initial() if item=='adiabatic' else (function(v,prefix+'/Function',x,y,index) if dimension==2 else function(v,prefix+'/Function',x,np.full(x.shape,mid_y),index,z=y))
+            return total
         if model=='function':return function(v,prefix+'/Function',x,y,index) if dimension==2 else function(v,prefix+'/Function',x,np.full(x.shape,mid_y),index,z=y)
         if model=='ascii data':
             if dimension==3:raise ValueError('Direct 3D ASCII preview is not implemented; no 2D interpolation was substituted')

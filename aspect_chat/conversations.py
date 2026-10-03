@@ -44,7 +44,8 @@ def start(prompt,case_id,attachment_ids,lang,session_id=None):
                 (json.dumps({'tool':name,'state':state}),request_id))
         try:
             args=(prompt,case_id,True,event,attachment_ids,lang)
-            result=agent.chat(*args,session_id=session_id,on_result=publish)
+            result=agent.chat(*args,session_id=session_id,on_result=publish,
+                              on_message=lambda text: storage.add_chat('assistant',text,lang,session_id))
             storage.add_chat('assistant',result['text'],lang,session_id)
             if session_id:
                 bound_case=case_id

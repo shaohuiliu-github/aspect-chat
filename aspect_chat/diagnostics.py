@@ -22,6 +22,22 @@ def known_parameters(case_id):
     for prefix in ('Geometry model','Gravity model','Material model'):
         key=prefix+'/Model name'
         if actual.get(key,'unspecified')=='unspecified':errors.append({'path':key,'code':'missing_plugin','message':'This required plugin has not been selected','suggestions':[]})
+    # ASPECT --validate cannot detect parser component counts at plugin construction.
+    try:count=int(actual.get('Compositional fields/Number of fields','0'))
+    except ValueError:count=0
+    functions=[]
+    for prefix,expected in (('Initial temperature model',1),('Initial composition model',count)):
+        if 'function' in [a.strip() for a in actual.get(prefix+'/List of model names','').split(',')] and expected:
+            functions.append((prefix+'/Function/Function expression',expected))
+    if count and 'adiabatic' in [a.strip() for a in actual.get('Initial temperature model/List of model names','').split(',')]:
+        functions.append(('Initial temperature model/Adiabatic/Function/Function expression',count))
+    if count and actual.get('Adiabatic conditions/Compute profile/Composition reference profile','initial composition')=='function':
+        functions.append(('Adiabatic conditions/Compute profile/Function/Function expression',count))
+    for path,expected in functions:
+        expression=actual.get(path,'0')
+        parts=expression.split(';')
+        if len(parts)!=expected or any(not p.strip() for p in parts):
+            errors.append({'path':path,'code':'function_components','message':f'Expected {expected} semicolon-separated function expressions, got {len(parts)}. Supply one expression per component; zero reference components need explicit 0; 0; ... .','suggestions':[]})
     path=knowledge.directory()/'runtime-manual/parameters.md'
     if not path.exists():return {'ok':not errors,'available':False,'errors':errors}
     tree=json.loads(path.read_text());known=set()

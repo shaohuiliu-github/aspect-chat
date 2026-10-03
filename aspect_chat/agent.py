@@ -26,6 +26,7 @@ class Create(ToolArgs):
 class Run(ToolArgs):
     case_id: str
     cores: int | None = Field(default=None,ge=1,le=64)
+    timeout: int | None = Field(default=None,ge=1,le=604800)
 class Sweep(ToolArgs):
     case_id: str
     path: str
@@ -188,7 +189,7 @@ submit_case 只表示进入队列，不能声称运行完成。检查实际 job 
 引用检索资料时给出 source/path/version。语言简洁，报告参数差异、以时间命名的任务名与输出路径。case_id 和 job_id 仅供工具调用，不向用户展示随机内部编号。参数检查在后台进行；只向用户解释缺失项或具体错误，不报告检查通过的过程。
 '''
 
-def chat(prompt,current_case=None,allow_run=True,on_event=None,attachment_ids=None,lang=None,session_id=None,on_result=None):
+def chat(prompt,current_case=None,allow_run=True,on_event=None,attachment_ids=None,lang=None,session_id=None,on_result=None,on_message=None):
     cfg=config(); lang=lang or cfg['language']; info=providers.current(cfg['provider'])
     key=api_key(info['id'])
     if not key and info['id']!='custom': raise ValueError('请在设置保存当前服务商的 API 密钥。' if lang=='zh' else 'Save an API key for the selected provider in Settings.')
@@ -226,6 +227,8 @@ digitize_density_map 只生成数据，必须继续查询运行时初始组分 a
     extra+='\n跨程序可以建立物理过程相近的三维模型，但必须逐项标注已实现、缺失及不同的物理过程和边界条件；不能将相似模型称为经过科学验证的复现。三维函数盒子的初始场预览是中央 x-z 剖面；黏度是指定参考应变率和压力条件下的参考值。\n'
     extra+='''
 Simulations run asynchronously. After submitting the requested task(s), immediately explain the saved model, key settings, assumptions and output folder. Do not wait for completion or repeatedly poll jobs in this conversation turn. A queued task is not a successful simulation; the UI reports actual completion independently. If comparing several models, submit the requested set, then finish the reply.
+Before submitting a paper-based approximation, explain its dimension, actual mesh, retained physical parameters and omitted processes in a short assistant message. This message is displayed before the tool executes. State requested core count and wall-clock target as a target, never a guarantee. Do not call a coarse 2D analogue a reproduction of a 3D experiment. Follow the user's initial dimension and resolution request from the start, and preserve it in both inputs and explanations.
+For a paper's main experiment, use that experiment's specific values, not convenient values from a study-wide range. A request for a coarse 2D version authorizes dimension and mesh changes, not a deeper domain, hotter plume or replacement of its rheology for visual impact. Preserve its vertical extent, physical values and implemented constitutive laws. Explain genuinely unavailable physics before submission. Read available local cases and their physics_alignment records when reusing earlier work, and verify those values against the attached paper. Do not substitute a simpler teaching experiment for the requested main experiment. Re-record alignment after any input edit so the evidence matches the submitted revision. Use submit_case.timeout for an explicit wall-clock budget in seconds.
 The UI automatically renders initial fields from a saved model. Do not report that no preview exists simply because you did not call a preview tool. A user's explicit request to run remains authorization after routine repairs; do not ask for confirmation again. I2VIS alignment paths are the exact inspected keys (init/xsize, rock/2/markro, output/0/cycles, mode/filestop), never invented file/section names. For teaching cases, keep the final answer brief: model purpose, 2–4 key settings and assumptions, task/folder and one suggested edit. Report errors and missing physics concisely.
 教学案例的用户提示可以很短。解释放在回复中：先用几句话说明模型目标、2—4个关键设置和取值依据，再给一条可修改建议；不要重复一长串检查流程。用户未指定的普通教学设置可采用完整匹配模板的默认值并标为教学假设；用户已给的值优先。关键物理含义、论文证据或图像标定不明确时仍须说明缺项，不猜测。只在用户要求时运行。
 二维热对流教学例优先读取 convection-box 完整算例。对于1000×500 km和三组Ra，未另指定时可用 rho=3300 kg/m^3、alpha=3e-5 K^-1、Cp=1250 J/(kg K)、k=4.125 W/(m K)、g=9.81 m/s^2、顶底273/1573 K；kappa=k/(rho*Cp)=1e-6 m^2/s，用Ra=rho*g*alpha*DeltaT*H^3/(eta*kappa)换算黏度，只改黏度比较。教学起步网格32×16单元、结束100 Myr、每10 Myr输出；说明可在对话中修改。不要把重力数值当成有量纲模型的Ra。
@@ -247,6 +250,10 @@ I2VIS滴落教学例读取rayleigh_taylor；参考材料2密度3300 kg/m^3，材
             messages.append(assistant)
             calls=message.get('tool_calls') or []
             if not calls: return {'text':providers.visible_text(message.get('content')) or ('完成。' if lang=='zh' else 'Done.'),'events':events}
+            # Publish the model's actual explanation before executing its tools.
+            # In particular, approximations must be visible before a run starts.
+            prose=providers.visible_text(message.get('content'))
+            if prose and on_message: on_message(prose)
             rendered_attachments=[]
             for call in calls:
                 name=call['function']['name']; args={}

@@ -14,7 +14,7 @@ def signature(case_id):
         ignored={'End time','Start time','Output directory','Resume computation','Nonlinear solver scheme','Max nonlinear iterations','Nonlinear solver tolerance','CFL number','Maximum first time step','Maximum time step'}
         params={k:v for k,v in prm.values(text).items() if k not in ignored and not k.startswith(('Postprocess/','Solver parameters/','Termination criteria/','Checkpointing/'))}
         text=json.dumps(params,sort_keys=True)
-    h=hashlib.sha256(b'direct-initial-v4-3d-central-slice'+case['engine'].encode()+text.encode())
+    h=hashlib.sha256(b'direct-initial-v5-muparser-if'+case['engine'].encode()+text.encode())
     for p in sorted((Path(case['path'])/'assets').rglob('*')):
         if p.is_file() and not p.is_symlink() and p.suffix in {'.json','.dat','.txt','.csv','.wb'}:h.update(str(p.name).encode());h.update(p.read_bytes())
     return h.hexdigest()

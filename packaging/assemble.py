@@ -64,7 +64,7 @@ for label,url,revision in [('i2vis-public-i2elvis','https://github.com/FormingWo
     if (args.extras/label).exists():
         shutil.copytree(args.extras/label,kb/label,dirs_exist_ok=True)
         results.append(knowledge.register(kb/label,label,'reference branch',url,role='reference',revision=revision,default_kind='manual'))
-manifest.update({'package_version':'2.0.4','knowledge':knowledge.summary(),'sources':results,'i2vis':{'revision':i2vis.REVISION,'backend':'SuiteSparse UMFPACK portable PARDISO adapter','source_owner_permission':'user confirmed; documentary evidence pending'}})
+manifest.update({'package_version':'2.0.5','knowledge':knowledge.summary(),'sources':results,'i2vis':{'revision':i2vis.REVISION,'backend':'SuiteSparse UMFPACK portable PARDISO adapter','source_owner_permission':'user confirmed; documentary evidence pending'}})
 (kb/'manifest.json').write_text(json.dumps(manifest,indent=2))
 # Private paper facts are an opt-in local build input, never part of a public build.
 (kb/'papers').mkdir(exist_ok=True)

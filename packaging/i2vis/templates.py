@@ -30,7 +30,7 @@ for name in ('rayleigh_taylor','mantle_plume'):
  init=header+rock(0,1,'1e17')+rock(2,3300,'1e21')+rock(3,3400,'1e20')+'~\n'+bc+'/MATERIAL_BOXES\n0 2 0 0 0 1 1 0 1 1\n'
  if name=='rayleigh_taylor':init+='0 3 0 0 0 .5 1 0 1 .55\n'
  init+='~\n/TEMPERATURE\n0 0 0 0 1 1 0 1 1 300 1600 300 1600\n'
- if name=='mantle_plume':init+='0 .4 .8 .4 1 .6 .8 .6 1 1700 1800 1700 1800\n'
+ if name=='mantle_plume':init+='0 .4 .8 .4 .95 .6 .8 .6 .95 1700 1800 1700 1800\n'
  init+='~\n';d=root/'templates'/name;d.mkdir(parents=True,exist_ok=True);(d/'init.t3c').write_text(init);(d/'mode.t3c').write_text(mode)
 init=(root/'init.t3c').read_text();init=init.replace('801-xnumx','81-xnumx').replace('201-ynumy','41-ynumy').replace('4-mnumx','4-mnumx').replace('4-mnumy','4-mnumy').replace('dsd000.h5','initial.h5')
 d=root/'templates/subduction';d.mkdir(parents=True,exist_ok=True);(d/'init.t3c').write_text(init);(d/'mode.t3c').write_text(mode)

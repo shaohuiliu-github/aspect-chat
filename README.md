@@ -1,27 +1,42 @@
 # chatGFD
 
-**用数值模拟检验你的地球科学假说。看看物理上是否可行。**
+**用对话建立动力学模型，检验地球科学假说，学习数值模拟。**
 
 Geophysical Fluid Dynamics Simulation · 地球流体动力学模拟
 
-[English](README-English.md) · [安装说明](INSTALL.md) · [发布包与验证报告](https://github.com/shaohuiliu-github/chatGFD/releases/tag/v2.0.4)
+[English](README-English.md) · [安装说明](INSTALL.md) · [发布包与检查报告](https://github.com/shaohuiliu-github/chatGFD/releases/tag/v2.0.5)
 
-面向地质、地球化学、地震与古地磁研究，也帮助初学者建立第一个动力学模型。通过对话创建、修改和运行 ASPECT / i2vis 模型。求解器、Python 环境和带版本的离线知识库封装在 Docker 镜像里，无需下载源码或单独安装求解器。
+chatGFD 把自然语言描述变成可编辑、可运行的 ASPECT / i2vis 模型。科研用户可以把地质、地球化学、地震或古地磁问题转成对照实验，检查假说的物理可行性；动力学数值模拟入门者也可以从一个简单案例开始，通过对话更快建立模型，逐步理解材料、边界条件和参数变化的影响。
 
-## 四步开始
+求解器、Python 环境和离线知识库已封装在 Docker 镜像中，无需下载 GitHub 源码或单独安装求解器。
 
-1. 安装并启动 [Docker Desktop](https://docs.docker.com/get-started/get-docker/)。
-2. 下载小型 [chatGFD 启动包](https://github.com/shaohuiliu-github/chatGFD/releases/download/v2.0.4/chatGFD-2.0.4-online.zip)，然后解压。
-3. Mac 打开「终端」，输入 `bash `（末尾留一个空格），把解压目录里的 `start.sh` 拖入终端并按回车；Windows 双击 `Start.bat`。首次启动会自动下载模拟环境并打开网页。
-4. 在左下角 **Settings（设置）** 中输入自己的大模型 API 密钥，即可开始对话和运行。
+## 直接在终端启动
 
-模型和结果保存在解压目录的 `chatGFD-2.0.4-online/workspace`，可用 ParaView 等软件打开。Docker 镜像已包含 ASPECT、i2vis、Python 环境和离线知识库。命令行安装、Linux 启动及升级步骤见 [安装说明](INSTALL.md)。
+先安装并启动 [Docker Desktop](https://docs.docker.com/get-started/get-docker/)。Mac / Linux 在终端复制：
 
-Mac 启动包只提供终端脚本，不含未经签名的 `.command` 快捷方式。以后重复相同步骤即可启动；停止请参照[安装说明](INSTALL.md)。
+```sh
+mkdir -p "$HOME/chatgfd-workspace"
+docker run -d --pull=always --name chatgfd --restart unless-stopped \
+  --user "$(id -u):$(id -g)" -p 127.0.0.1:8517:8517 \
+  --mount "type=bind,source=$HOME/chatgfd-workspace,target=/workspace" \
+  -e "ASPECT_CHAT_HOST_WORKSPACE=$HOME/chatgfd-workspace" \
+  ghcr.io/shaohuiliu-github/aspect-chat:2.0.5
+```
 
-[演示提示词](DEMO_CASES.md)也可复制。首页「经典模型示例」可一键填入六条中英文演示提示词：ASPECT 四条，I2VIS 两条。点击后先检查附件与模型选择，再发送。研究级案例会明确列出缺失参数与短程计算的解释边界。
+打开 [http://127.0.0.1:8517](http://127.0.0.1:8517)，在左下角 **Settings（设置）** 填写自己的 API 密钥，即可开始使用。首次运行自动下载环境；模型和结果保存在主文件夹中的 `chatgfd-workspace`，可用 ParaView 等软件打开。
 
-## 2.0.4 的工作流程
+以后启动用 `docker start chatgfd`，停止用 `docker stop chatgfd`。已有安装请用启动命令；升级、端口冲突和 Windows PowerShell 方法见 [安装说明](INSTALL.md)。
+
+如果希望文件夹按钮直接打开 Finder / Explorer，可使用小型 [启动包](https://github.com/shaohuiliu-github/chatGFD/releases/download/v2.0.5/chatGFD-2.0.5-online.zip)。Mac 解压后在终端输入 `bash `，拖入 `start.sh` 并回车；Windows 双击 `Start.bat`。
+
+## 科研与入门教学
+
+- **科研验证：** 上传论文或图像，核对物理参数、单位、来源与缺失项，再建立模型、做参数对比。模拟结果帮助判断假说的物理可行性。
+- **建模入门：** 点击「第一个模型」或「经典模型示例」，用简短描述开始。助手在对话中解释关键设置；可以继续说「把黏度降低一半」或「先不运行，只修改参数」，逐步学习。
+
+[六个简短案例提示词](DEMO_CASES.md)可直接复制，首页也可点击填入。论文和层析图案例需要上传附件；教学默认参数会在对话中说明，后续可随时修改。
+
+## 2.0.5 的工作流程
 
 - 在对话框上传 PDF、图片、PRM 或 i2vis 输入文件，发送后的附件保留在消息里。中英文界面，新工作区默认英文；可删除对话并保留模型和结果。
 - 论文提取先记录物理参数、原单位、PDF 页码、短引文、换算、实际输入值和缺失项。记录随输入版本变化，并随运行快照保存。参数语法通过不代表论文已复现；网格和迭代收敛检查是后续工作。

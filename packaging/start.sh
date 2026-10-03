@@ -35,7 +35,7 @@ if [ "$mode" = stop ]; then
 fi
 arch="$(docker info --format '{{.Architecture}}')"
 case "$arch" in aarch64|arm64) arch=arm64;; x86_64|amd64) arch=amd64;; *) printf 'Unsupported architecture: %s\n' "$arch"; exit 1;; esac
-image="aspect-chat:2.0.4-aspect3.1.0-$arch"
+image="aspect-chat:2.0.5-aspect3.1.0-$arch"
 if ! docker image inspect "$image" >/dev/null 2>&1; then
   archive="images/aspect-chat-$arch.tar.gz"
   if [ -f "$archive" ]; then
@@ -63,7 +63,7 @@ else
   for attempt in $(seq 1 30); do
     if (: >/dev/tcp/127.0.0.1/"$port") 2>/dev/null; then port=$((port+1)); continue; fi
     if docker run -d --name "$name" --restart unless-stopped --stop-timeout 30 \
-      --label "aspect-chat.port=$port" --label aspect-chat.package=2.0.4 \
+      --label "aspect-chat.port=$port" --label aspect-chat.package=2.0.5 \
       --user "$(id -u):$(id -g)" -p "127.0.0.1:$port:8517" \
       --mount "type=bind,source=$workspace,target=/workspace" \
       -e "ASPECT_CHAT_HOST_WORKSPACE=$workspace" -e "ASPECT_CHAT_PUBLIC_PORT=$port" \

@@ -1,25 +1,40 @@
 # chatGFD
 
-**Test your Earth science ideas with simulations. See what is physically possible.**
+**Build geodynamic models through conversation. Test Earth science ideas and learn numerical modeling.**
 
 Geophysical Fluid Dynamics Simulation
 
-[中文](README.md) · [Installation guide](INSTALL.md) · [Releases and validation report](https://github.com/shaohuiliu-github/chatGFD/releases/tag/v2.0.4)
+[中文](README.md) · [Installation guide](INSTALL.md) · [Releases and review report](https://github.com/shaohuiliu-github/chatGFD/releases/tag/v2.0.5)
 
-A local conversational workspace for ASPECT and i2vis, for geology, geochemistry, seismology and paleomagnetism research, with a first-model guide for beginners. The Docker image bundles solvers, Python dependencies and versioned offline references. No source checkout or separate solver installation is required.
+chatGFD turns a description into editable, runnable ASPECT / i2vis models. Researchers in geology, geochemistry, seismology and paleomagnetism can build comparisons to test the physical feasibility of a hypothesis. Beginners can start with a simple example, build a model faster, and learn how materials, boundaries and parameter changes affect the simulation.
 
-## Start in four steps
+Docker bundles the solvers, Python environment and offline knowledge base. No GitHub source download or separate solver installation is needed.
 
-1. Install and start [Docker Desktop](https://docs.docker.com/get-started/get-docker/).
-2. Download the small [chatGFD launcher](https://github.com/shaohuiliu-github/chatGFD/releases/download/v2.0.4/chatGFD-2.0.4-online.zip) and extract it.
-3. On Mac, open Terminal, type `bash ` (including the trailing space), drag `start.sh` from the extracted folder into Terminal, and press Return. On Windows, double-click `Start.bat`. The first launch downloads the simulation environment and opens the webpage.
-4. Enter your own model provider API key in **Settings** at the lower left. You can then chat and run models.
+## Start from Terminal
 
-Models and results are saved in `chatGFD-2.0.4-online/workspace` inside the extracted folder, ready for ParaView and other software. The Docker image includes ASPECT, i2vis, Python dependencies and offline references. See the [installation guide](INSTALL.md) for command-line setup, Linux and upgrades.
+Install and start [Docker Desktop](https://docs.docker.com/get-started/get-docker/). On Mac / Linux, copy:
 
-The Mac launcher is a Terminal script; the unsigned `.command` shortcut is no longer included. Repeat the same step to start later, and see the [installation guide](INSTALL.md) to stop it.
+```sh
+mkdir -p "$HOME/chatgfd-workspace"
+docker run -d --pull=always --name chatgfd --restart unless-stopped \
+  --user "$(id -u):$(id -g)" -p 127.0.0.1:8517:8517 \
+  --mount "type=bind,source=$HOME/chatgfd-workspace,target=/workspace" \
+  -e "ASPECT_CHAT_HOST_WORKSPACE=$HOME/chatgfd-workspace" \
+  ghcr.io/shaohuiliu-github/aspect-chat:2.0.5
+```
 
-The [demo prompts](DEMO_CASES.md) are copy-ready. The homepage's **Model examples** menu fills six bilingual demo prompts: four ASPECT and two I2VIS. Check the selected solver and any required upload before sending. Research-scale cases explicitly identify missing inputs and the limits of short pilot runs.
+Open [http://127.0.0.1:8517](http://127.0.0.1:8517) and enter your API key in **Settings** at the lower left. The first launch downloads the environment. Models and results stay in `chatgfd-workspace` under your home directory, ready for ParaView or other software.
+
+Use `docker start chatgfd` later and `docker stop chatgfd` to stop. For an existing install, use the start command. See [installation instructions](INSTALL.md) for upgrades, port conflicts and Windows PowerShell.
+
+For buttons that open Finder / Explorer directly, use the small [launcher](https://github.com/shaohuiliu-github/chatGFD/releases/download/v2.0.5/chatGFD-2.0.5-online.zip). On Mac, extract it, type `bash ` in Terminal, drag in `start.sh`, and press Return. Windows uses Start.bat.
+
+## Research and education
+
+- **Test hypotheses:** Upload a paper or image, align the physics, units, sources and missing inputs, then create models and compare parameters. Simulation helps assess physical feasibility.
+- **Learn modeling:** Click First model or Model examples and start with a short description. The assistant explains key settings in chat. Ask to halve the viscosity or edit inputs without running to learn through small changes.
+
+[Six short example prompts](DEMO_CASES.md) are copy-ready and available from the homepage. Paper and tomography cases need uploads. Teaching defaults are explained in chat and can be changed later.
 
 ## Workflow
 

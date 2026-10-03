@@ -1,4 +1,4 @@
-# chatGFD 2.0.4
+# chatGFD 2.0.5
 
 Install and start Docker. On Mac, open Terminal, type `bash ` (with the space), drag this folder's `start.sh` into Terminal, and press Return. On Windows, double-click `Start.bat` (Linux containers); on Linux, run `bash start.sh` here. Open the displayed local URL, enter your API key in Settings, choose ASPECT or I2VIS at the upper left, and select your conversation model below the composer.
 

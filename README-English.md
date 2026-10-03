@@ -10,9 +10,10 @@ chatGFD turns a description into editable, runnable ASPECT / i2vis models. Resea
 
 Docker bundles the solvers, Python environment and offline knowledge base. No GitHub source download or separate solver installation is needed.
 
-## Start from Terminal
+## First time: four steps
 
-Install and start [Docker Desktop](https://docs.docker.com/get-started/get-docker/). On Mac / Linux, copy:
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/), open it, and wait until it is running.
+2. On Mac, press **⌘ + Space**, search for **Terminal**, and open it. Copy the entire block below into Terminal and press Return. The first download takes time; wait until the command prompt returns.
 
 ```sh
 mkdir -p "$HOME/chatgfd-workspace"
@@ -23,11 +24,22 @@ docker run -d --pull=always --name chatgfd --restart unless-stopped \
   ghcr.io/shaohuiliu-github/aspect-chat:2.0.5
 ```
 
-Open [http://127.0.0.1:8517](http://127.0.0.1:8517) and enter your API key in **Settings** at the lower left. The first launch downloads the environment. Models and results stay in `chatgfd-workspace` under your home directory, ready for ParaView or other software.
+3. Open **[http://127.0.0.1:8517](http://127.0.0.1:8517)** in your browser.
+4. Click **Settings** at the lower left, enter your API key, and save. Type the model you want in the chat box and send.
 
-Use `docker start chatgfd` later and `docker stop chatgfd` to stop. For an existing install, use the start command. See [installation instructions](INSTALL.md) for upgrades, port conflicts and Windows PowerShell.
+**No repository download or separate ASPECT, i2vis or Python installation is needed.** The commands also work on Linux. [Windows instructions](INSTALL.md#windows-english).
 
-For buttons that open Finder / Explorer directly, use the small [launcher](https://github.com/shaohuiliu-github/chatGFD/releases/download/v2.0.5/chatGFD-2.0.5-online.zip). On Mac, extract it, type `bash ` in Terminal, drag in `start.sh`, and press Return. Windows uses Start.bat.
+## Open it next time
+
+Open Docker Desktop, then copy this into Terminal:
+
+```sh
+docker start chatgfd
+```
+
+Open **[http://127.0.0.1:8517](http://127.0.0.1:8517)**. Do not repeat the first-time installation block.
+
+Models and results are saved in **`chatgfd-workspace`** inside your home folder. To stop, enter `docker stop chatgfd` in Terminal.
 
 ## Research and education
 

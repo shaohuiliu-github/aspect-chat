@@ -10,9 +10,10 @@ chatGFD 把自然语言描述变成可编辑、可运行的 ASPECT / i2vis 模�
 
 求解器、Python 环境和离线知识库已封装在 Docker 镜像中，无需下载 GitHub 源码或单独安装求解器。
 
-## 直接在终端启动
+## 第一次使用：只做这四步
 
-先安装并启动 [Docker Desktop](https://docs.docker.com/get-started/get-docker/)。Mac / Linux 在终端复制：
+1. 安装 [Docker Desktop](https://www.docker.com/products/docker-desktop/)，打开它，等待启动完成。
+2. Mac 按 **⌘ + 空格**，搜索「终端」并打开。把下面整段命令复制进去，按回车。第一次下载需要一些时间，等到重新出现可输入命令的提示符。
 
 ```sh
 mkdir -p "$HOME/chatgfd-workspace"
@@ -23,11 +24,22 @@ docker run -d --pull=always --name chatgfd --restart unless-stopped \
   ghcr.io/shaohuiliu-github/aspect-chat:2.0.5
 ```
 
-打开 [http://127.0.0.1:8517](http://127.0.0.1:8517)，在左下角 **Settings（设置）** 填写自己的 API 密钥，即可开始使用。首次运行自动下载环境；模型和结果保存在主文件夹中的 `chatgfd-workspace`，可用 ParaView 等软件打开。
+3. 在浏览器打开 **[http://127.0.0.1:8517](http://127.0.0.1:8517)**。
+4. 点击左下角 **Settings（设置）**，填写你的 API 密钥并保存。然后在对话框输入你想建立的模型，发送即可。
 
-以后启动用 `docker start chatgfd`，停止用 `docker stop chatgfd`。已有安装请用启动命令；升级、端口冲突和 Windows PowerShell 方法见 [安装说明](INSTALL.md)。
+**不用下载本仓库，也不用单独安装 ASPECT、i2vis 或 Python。** 上面的命令也适用于 Linux；[Windows 安装步骤](INSTALL.md#windows)。
 
-如果希望文件夹按钮直接打开 Finder / Explorer，可使用小型 [启动包](https://github.com/shaohuiliu-github/chatGFD/releases/download/v2.0.5/chatGFD-2.0.5-online.zip)。Mac 解压后在终端输入 `bash `，拖入 `start.sh` 并回车；Windows 双击 `Start.bat`。
+## 下次怎么打开
+
+打开 Docker Desktop，在终端复制这一行：
+
+```sh
+docker start chatgfd
+```
+
+然后打开 **[http://127.0.0.1:8517](http://127.0.0.1:8517)**。第一次安装的长命令不用再执行。
+
+模型和结果保存在用户主文件夹的 **`chatgfd-workspace`** 中。用完想停止，在终端输入 `docker stop chatgfd`。
 
 ## 科研与入门教学
 

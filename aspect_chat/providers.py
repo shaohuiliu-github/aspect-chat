@@ -98,10 +98,20 @@ def claude_payload(messages,tools,model):
         'tools':[{'name':t['function']['name'],'description':t['function']['description'],
                   'input_schema':t['function']['parameters']} for t in tools]}
 
+def completion_request(client,url,**kwargs):
+    # A lost provider response is safe to retry: tool execution has not happened.
+    # Never replay application tools or retry authentication/input errors here.
+    for attempt in range(3):
+        try:
+            return client.post(url,**kwargs)
+        except (httpx.TransportError,):
+            if attempt==2: raise
+            time.sleep(attempt+1)
+
 def complete(client,info,key,messages,tools):
     if info['protocol']=='claude':
         payload=claude_payload(messages,tools,info['model'])
-        data=check(client.post(info['url'].rstrip('/')+'/messages',headers=headers(info,key),json=payload),key)
+        data=check(completion_request(client,info['url'].rstrip('/')+'/messages',headers=headers(info,key),json=payload),key)
         calls=[]; text=[]
         for b in data.get('content',[]):
             if b['type']=='text': text.append(b['text'])
@@ -111,7 +121,7 @@ def complete(client,info,key,messages,tools):
     if tools:payload.update(tools=tools,tool_choice='auto')
     if info['id']=='qwen': payload['enable_thinking']=False
     if info['id']=='kimi' and 'k2.5' in info['model']: payload['thinking']={'type':'disabled'}
-    data=check(client.post(info['url'].rstrip('/')+'/chat/completions',headers=headers(info,key),json=payload),key)
+    data=check(completion_request(client,info['url'].rstrip('/')+'/chat/completions',headers=headers(info,key),json=payload),key)
     # Keep reasoning_content for services that require it in tool continuations.
     return data['choices'][0]['message']
 

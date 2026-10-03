@@ -1,12 +1,32 @@
 # chatGFD
 
-**Build geodynamic models through conversation. Test Earth science ideas and learn numerical modeling.**
+**Build models through conversation. Explore Earth science ideas with simulations.**
 
 Geophysical Fluid Dynamics Simulation
 
-[中文](README.md) · [Installation guide](INSTALL.md) · [Releases and review report](https://github.com/shaohuiliu-github/chatGFD/releases/tag/v2.0.5)
+[中文](README.md) · [Watch the 4-minute demo](https://youtu.be/BNjAN6mV1Xs) · [Installation guide](INSTALL.md) · [Downloads and releases](https://github.com/shaohuiliu-github/chatGFD/releases/tag/v2.0.5)
 
-chatGFD turns a description into editable, runnable ASPECT / i2vis models. Researchers in geology, geochemistry, seismology and paleomagnetism can build comparisons to test the physical feasibility of a hypothesis. Beginners can start with a simple example, build a model faster, and learn how materials, boundaries and parameter changes affect the simulation.
+Make your Earth science ideas easier to model, teach and discuss. **chatGFD is an early demo product** for building and exploring simple geodynamic models through conversation, using **ASPECT and i2vis**. Describe an idea, inspect the inputs and initial fields, change a parameter, and see how the model evolves.
+
+The chat assistant helps organize inputs and explain the setup; real geodynamic solvers perform the numerical calculation. Input files remain editable, and results stay on your computer for viewing in ParaView or other tools.
+
+### “What model are you?”
+
+This demo conversation identifies the selected language model and the actual simulation engine. The language model handles the conversation; ASPECT / i2vis performs the numerical calculation.
+
+![chatGFD answering What model are you, identifying the language model and ASPECT simulation engine](docs/screenshots/chatgfd-model-identity.png)
+
+## Why this matters
+
+- **Earth science education:** Help teachers and students explore buoyancy, viscosity, temperature and boundary conditions through small numerical experiments. Make abstract processes visible and ask what assumptions produce a particular result.
+- **Connections across Earth science:** Give researchers in geology, geochemistry, seismology, paleomagnetism and related fields a practical starting point for discussing physical mechanisms. Use a conceptual sketch, paper or calibrated image to guide an initial model whose assumptions can be inspected and revised together.
+- **A first step into geodynamics:** Build a first working model faster and learn how geometry, material properties, initial fields and boundary conditions fit together. Continue learning by editing the inputs.
+- **Early exploration of geological hypotheses:** Turn a proposed mechanism into a simple experiment, compare alternative assumptions and explore physical plausibility within the model's stated limits.
+- **A starting point for experienced geodynamicists:** Establish initial geometry, fields and input files for a new idea, then refine the physics, resolution and implementation using your usual research workflow.
+
+The aim is to make the first modeling step more accessible, support teaching and collaboration, and leave scientific assumptions open to inspection.
+
+**Current limits:** Knowledge-base coverage and the author's available development time are limited. The product currently supports simple models and is not yet well suited to complex research models. Physical alignment comes first: values, units, material laws, boundary conditions, missing inputs and assumptions need careful review. Mesh and solver convergence must then be assessed before scientific conclusions are drawn. A successful run alone does not establish that a geological hypothesis is correct or that a published model has been reproduced.
 
 Docker bundles the solvers, Python environment and offline knowledge base. No GitHub source download or separate solver installation is needed.
 
@@ -41,12 +61,27 @@ Open **[http://127.0.0.1:8517](http://127.0.0.1:8517)**. Do not repeat the first
 
 Models and results are saved in **`chatgfd-workspace`** inside your home folder. To stop, enter `docker stop chatgfd` in Terminal.
 
-## Research and education
+## From conversation to results
 
-- **Test hypotheses:** Upload a paper or image, align the physics, units, sources and missing inputs, then create models and compare parameters. Simulation helps assess physical feasibility.
-- **Learn modeling:** Click First model or Model examples and start with a short description. The assistant explains key settings in chat. Ask to halve the viscosity or edit inputs without running to learn through small changes.
+**1. Inspect initial fields, edit inputs and follow task status.** Temperature, density and reference-viscosity previews are evaluated directly from supported input settings. The task panel shows time-based names, success or failure, output-folder access and logs. Use **Edit parameters**, then **Run again** to try a change.
+
+![ASPECT initial temperature preview, editing and rerun controls, and actual success and failure states](docs/screenshots/chatgfd-preview-and-tasks.png)
+
+**2. Turn a tomography image into model input and compare it with the original.** Coordinates, a color legend, units and the physical mapping must be explicit. This example preserves the source colors for comparison and uses a teaching density proxy, not a unique inversion from seismic velocity. The image was redrawn from LLNL-G3D-JPS data in an ASPECT cookbook; see [image provenance](docs/screenshots/README.md).
+
+![Original tomography image beside converted reference density, using the same colors and an explicit teaching conversion](docs/screenshots/tomography-to-density.png)
+
+**3. ASPECT: compare three Rayleigh numbers.** The same 2D thermal setup uses different viscosities to change Ra. These are actual solver outputs displayed in ParaView. Open the saved `solution.pvd` to play the evolution; the coarse demonstrations do not establish convergence.
+
+![Actual ASPECT temperature outputs for 2D mantle convection at Rayleigh numbers 1e4, 1e5 and 1e6](docs/screenshots/aspect-rayleigh-comparison.png)
+
+**4. i2vis: inspect early hot-anomaly evolution.** Actual saved i2vis outputs show the full model, a zoomed view, and initial versus current temperature contours. See the [full demo](https://youtu.be/BNjAN6mV1Xs) for animation, density comparisons and ParaView operation.
+
+![Actual i2vis output at 2 Myr, showing the full model, zoom and initial versus current 1700 K contours](docs/screenshots/i2vis-hot-anomaly-evolution.png)
 
 [Six short example prompts](DEMO_CASES.md) are copy-ready and available from the homepage. Paper and tomography cases need uploads. Teaching defaults are explained in chat and can be changed later.
+
+The demo video is edited to shorten waiting times. Some saved replies are replayed progressively; evolution frames come from actual solver outputs. The paper example is an explicitly simplified 2D teaching approximation.
 
 ## Workflow
 
@@ -77,3 +112,11 @@ Application: AGPL-3.0-or-later. Independent solver/reference licenses remain dis
 Complete corresponding source/build context is in the Release source ZIP and in the image under /opt/aspect-chat and /opt/chatgfd-adapter. From the source ZIP's source directory: `docker build -f packaging/Dockerfile -t chatgfd-local .`.
 
 Keys, conversations and results stay in your workspace; cloud chat requires internet and your API quota. Scientific review remains necessary. Short smoke runs do not replace mesh convergence or research benchmarks. Plain Docker writes normal host files; the optional launcher also enables host Open Folder actions.
+
+## Acknowledgments and related projects
+
+Special thanks to **Professor Taras Gerya** for his support of this project. Thanks also to the ASPECT and i2vis developers and the geodynamics community.
+
+- [ASPECT website](https://aspect.geodynamics.org/) · [ASPECT source](https://github.com/geodynamics/aspect)
+- [i2vis method: Gerya & Yuen (2003)](https://doi.org/10.1016/j.pepi.2003.09.006)
+- [Public I2ELVIS planet reference code](https://github.com/FormingWorlds/i2elvis_planet): a different branch from this demo's i2vis runtime.

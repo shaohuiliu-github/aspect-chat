@@ -1,12 +1,32 @@
 # chatGFD
 
-**用对话建立动力学模型，检验地球科学假说，学习数值模拟。**
+**用对话建立模型，用模拟探索地球科学想法。**
 
 Geophysical Fluid Dynamics Simulation · 地球流体动力学模拟
 
-[English](README-English.md) · [安装说明](INSTALL.md) · [发布包与检查报告](https://github.com/shaohuiliu-github/chatGFD/releases/tag/v2.0.5)
+[English](README-English.md) · [观看 4 分钟 Demo](https://youtu.be/BNjAN6mV1Xs) · [安装说明](INSTALL.md) · [下载与发布记录](https://github.com/shaohuiliu-github/chatGFD/releases/tag/v2.0.5)
 
-chatGFD 把自然语言描述变成可编辑、可运行的 ASPECT / i2vis 模型。科研用户可以把地质、地球化学、地震或古地磁问题转成对照实验，检查假说的物理可行性；动力学数值模拟入门者也可以从一个简单案例开始，通过对话更快建立模型，逐步理解材料、边界条件和参数变化的影响。
+chatGFD 是一个早期 demo 产品，让地球科学想法更容易建模、教学和讨论。描述你的想法，用 **ASPECT 或 i2vis** 建立简单模型，检查输入参数和初始场，修改参数，再查看模型如何演化。
+
+对话助手协助组织输入与解释设置，数值求解由实际的动力学程序完成。输入文件可以手动编辑，结果保存在本机，可以继续用 ParaView 等软件查看。
+
+### “你是什么模型？”
+
+这段演示对话说明了所选语言模型与实际求解器的区别。语言模型负责对话；ASPECT / i2vis 负责数值计算。
+
+![chatGFD 对话：What model are you?，说明语言模型与 ASPECT 求解器](docs/screenshots/chatgfd-model-identity.png)
+
+## 为什么做 chatGFD
+
+- **地球科学教育：** 用小型数值实验把浮力、黏度、温度和边界条件变成看得见的过程，帮助教师与学生讨论“哪些假设导致了这样的结果”。
+- **学科交叉：** 为地质、地球化学、地震、古地磁等领域提供讨论物理机制的起点。概念图、论文或经过标定的图像可以成为初始模型的依据，参数与假设便于共同检查和修改。
+- **动力学入门：** 更快建立第一个可运行模型，逐步理解几何、材料、初始场和边界条件怎样配合，并继续编辑输入文件学习。
+- **地质假说的初步探索：** 把一个可能的机制转成简单实验，对比不同假设，在模型明确的适用范围内探索物理可行性。
+- **专业动力学家的新想法：** 协助建立初始几何、初始场和参数文件，作为进一步完善物理、分辨率和实现的起点。
+
+目标是让建模的第一步更容易，让教学与合作更直观，同时让科学假设始终可以被检查。
+
+**当前局限：** 知识库覆盖范围和作者可投入的开发时间有限，目前适合简单模型，还不太适用于复杂科研模型。物理参数对齐是首要工作：数值、单位、材料定律、边界条件、缺失项和假设都需要审阅；随后还需评估网格与求解器收敛。运行成功本身不能证明地质假说正确，也不能证明论文模型已被复现。
 
 求解器、Python 环境和离线知识库已封装在 Docker 镜像中，无需下载 GitHub 源码或单独安装求解器。
 
@@ -41,12 +61,27 @@ docker start chatgfd
 
 模型和结果保存在用户主文件夹的 **`chatgfd-workspace`** 中。用完想停止，在终端输入 `docker stop chatgfd`。
 
-## 科研与入门教学
+## 从对话到结果
 
-- **科研验证：** 上传论文或图像，核对物理参数、单位、来源与缺失项，再建立模型、做参数对比。模拟结果帮助判断假说的物理可行性。
-- **建模入门：** 点击「第一个模型」或「经典模型示例」，用简短描述开始。助手在对话中解释关键设置；可以继续说「把黏度降低一半」或「先不运行，只修改参数」，逐步学习。
+**1. 检查初始场，编辑参数，查看运行状态。** 温度、密度和参考黏度预览直接来自支持的输入设置。右侧任务栏显示时间命名的任务、成功或失败状态、结果文件夹入口和日志。需要修改时，可以点击 **Edit parameters**，再点 **Run again**。
+
+![ASPECT 初始温度预览、编辑与再次运行按钮，以及右侧任务成功与失败状态](docs/screenshots/chatgfd-preview-and-tasks.png)
+
+**2. 把层析图转成模型输入，并与原图对比。** 坐标、色标、单位和转换关系需要明确。这里保留原图配色以便比较，密度转换是教学代理关系，不能仅凭地震波速唯一反演密度。图像由 ASPECT 官方案例中的 LLNL-G3D-JPS 数据重绘，见 [图像来源](docs/screenshots/README.md)。
+
+![上传层析图与转换后参考密度的并排对比，采用相同配色和明确的教学转换关系](docs/screenshots/tomography-to-density.png)
+
+**3. ASPECT：比较三个 Rayleigh 数。** 相同的二维热对流设置，只改变黏度以改变 Ra；下图来自实际求解器输出，在 ParaView 中显示。可以打开保存的 `solution.pvd` 播放演化；这些粗分辨率演示不代表已完成收敛验证。
+
+![ASPECT 实际温度结果：Ra 为 1e4、1e5 和 1e6 的二维地幔对流对比](docs/screenshots/aspect-rayleigh-comparison.png)
+
+**4. i2vis：查看热异常的早期演化。** 下图来自实际保存的 i2vis 输出，展示全模型与局部放大，以及初始和当前温度等值线。动画、密度对比和 ParaView 操作见 [完整 Demo](https://youtu.be/BNjAN6mV1Xs)。
+
+![i2vis 实际输出：2 Myr 时的热异常，全模型、局部放大及初始和当前 1700 K 等值线](docs/screenshots/i2vis-hot-anomaly-evolution.png)
 
 [六个简短案例提示词](DEMO_CASES.md)可直接复制，首页也可点击填入。论文和层析图案例需要上传附件；教学默认参数会在对话中说明，后续可随时修改。
+
+Demo 视频为缩短等待而经过剪辑，部分已保存回复逐步回放；演化图来自实际求解器输出。论文示例是明确简化的二维教学近似。
 
 ## 2.0.5 的工作流程
 
@@ -73,3 +108,11 @@ ASPECT 为已验证的 3.1.0 发布版，包含全部 1,796 个稳定版 PRM 文
 完整对应源码与构建环境位于 Release 的 source ZIP，也可从镜像导出 /opt/aspect-chat 和 /opt/chatgfd-adapter。在源码包 source 目录运行 `docker build -f packaging/Dockerfile -t chatgfd-local .`。
 
 结果、对话和密钥保存在本机工作区；云端对话需要联网及你的 API 额度。图像标定和论文参数的科学意义需要人工审阅。短程运行测试不替代网格收敛或科研基准验证。直接 Docker 模式可从本机工作目录读取结果；可选启动包支持“打开文件夹”调用主机文件管理器。
+
+## 致谢与相关项目
+
+特别感谢 **Taras Gerya 教授** 对本项目的支持。感谢 ASPECT、i2vis 的开发者以及地球动力学社区。
+
+- [ASPECT 官方网站](https://aspect.geodynamics.org/) · [ASPECT 源码](https://github.com/geodynamics/aspect)
+- [i2vis 方法：Gerya & Yuen (2003)](https://doi.org/10.1016/j.pepi.2003.09.006)
+- [I2ELVIS planet 公开参考代码](https://github.com/FormingWorlds/i2elvis_planet)：与本 demo 的 i2vis 运行分支不同。

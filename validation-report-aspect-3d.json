@@ -1,0 +1,23 @@
+{
+  "draft_sha256": "620e209831d98b639123dd436d1dc07d7b6092cdbf1545572d3d7d17ba0c1e6e",
+  "solver": "ASPECT 3.1.0",
+  "platform": "linux/arm64 native in Colima",
+  "draft_initialization_exit_code": 0,
+  "end_time_years": 0,
+  "grid_cells": 256,
+  "elapsed_seconds": 28,
+  "regression_tests": "56 passed before the geotherm parser repair; 5 dedicated 3D tests passed after repair",
+  "physical_reproduction": false,
+  "limits": [
+    "coarse layers are under-resolved",
+    "no melt extraction/crust-growth/hydration/eclogitization",
+    "closed bottom is an explicit approximation",
+    "central field maps are evaluated from input, not simulator output"
+  ],
+  "nonlinear_initial_residual": 7.36094e-05,
+  "geotherm_preview_tests": "5 passed, including independent error-function comparison (<0.0002 K)",
+  "public_registry_update": false,
+  "local_image": "chatgfd:aspect-3d-preview",
+  "knowledge_documents": 13710,
+  "vtu_output_verified": true
+}

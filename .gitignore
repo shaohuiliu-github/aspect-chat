@@ -1,0 +1,11 @@
+data/
+workspace/
+.venv/
+__pycache__/
+*.pyc
+images/
+*.tar.gz
+*.zip
+
+work/
+paper_knowledge/

@@ -1,0 +1,49 @@
+/INPUT_GRID
+1-cartpolar
+41-xnumx
+21-ynumy
+4-mnumx
+4-mnumy
+1000000-xsize(m)
+500000-ysize(m)
+0-radius
+0-pinit
+0-GXKOEF
+9.81-GYKOEF
+0-timesum
+0-nonstab
+/MARKERS_FILE
+0
+/OUTPUT
+initial.h5 h
+/ROCKS
+0 1e17 1e17 0 5e29 1e17 0 0 0 1 0 0 0 0 0 0 1 1 3e-5 0 1250 3 0 0 0
+2 1e21 1e21 0 5e29 1e21 0 0 0 1 0 0 0 0 0 0 1 3300 3e-5 0 1250 3 0 0 0
+3 1e20 1e20 0 5e29 1e20 0 0 0 1 0 0 0 0 0 0 1 3400 3e-5 0 1250 3 0 0 0
+~
+/BOUNDARY_CONDITIONS
+P 2 2 1 1 0 0 0 0
+P 1 1 1 1 0 1 +1 +0 0 0
+P 1 1 y y 0 1 +1 +0 0 0
+P x x 1 1 0 1 -1 +0 0 0
+P x x y y 0 1 -1 +0 0 0
+Vx 0 x 0 0 0 1 0 +1 0 0
+Vy 0 x-1 0 0 0 0 0 0
+Vx 0 x y-1 y-1 0 1 0 -1 0 0
+Vy 0 x-1 y y 0 0 0 0
+Vx 0 0 1 y-2 0 0 0 0
+Vy 0 0 1 y-1 0 1 +1 0 0 0
+Vx x x 1 y-2 0 0 0 0
+Vy x-1 x-1 1 y-1 0 1 -1 0 0 0
+T 0 0 1 y-1 0 1 +1 0 0 0
+T 0 x 0 0 300 0 0 0
+T 0 x y y 1600 0 0 0
+T x x 1 y-1 0 1 -1 0 0 0
+~
+/MATERIAL_BOXES
+0 2 0 0 0 1 1 0 1 1
+~
+/TEMPERATURE
+0 0 0 0 1 1 0 1 1 300 1600 300 1600
+0 .4 .8 .4 1 .6 .8 .6 1 1700 1800 1700 1800
+~

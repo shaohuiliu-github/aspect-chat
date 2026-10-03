@@ -225,6 +225,7 @@ digitize_density_map 只生成数据，必须继续查询运行时初始组分 a
     extra+='\n跨程序可以建立物理过程相近的三维模型，但必须逐项标注已实现、缺失及不同的物理过程和边界条件；不能将相似模型称为经过科学验证的复现。三维函数盒子的初始场预览是中央 x-z 剖面；黏度是指定参考应变率和压力条件下的参考值。\n'
     extra+='''
 Simulations run asynchronously. After submitting the requested task(s), immediately explain the saved model, key settings, assumptions and output folder. Do not wait for completion or repeatedly poll jobs in this conversation turn. A queued task is not a successful simulation; the UI reports actual completion independently. If comparing several models, submit the requested set, then finish the reply.
+The UI automatically renders initial fields from a saved model. Do not report that no preview exists simply because you did not call a preview tool. A user's explicit request to run remains authorization after routine repairs; do not ask for confirmation again. I2VIS alignment paths are the exact inspected keys (init/xsize, rock/2/markro, output/0/cycles, mode/filestop), never invented file/section names. For teaching cases, keep the final answer brief: model purpose, 2–4 key settings and assumptions, task/folder and one suggested edit. Report errors and missing physics concisely.
 教学案例的用户提示可以很短。解释放在回复中：先用几句话说明模型目标、2—4个关键设置和取值依据，再给一条可修改建议；不要重复一长串检查流程。用户未指定的普通教学设置可采用完整匹配模板的默认值并标为教学假设；用户已给的值优先。关键物理含义、论文证据或图像标定不明确时仍须说明缺项，不猜测。只在用户要求时运行。
 二维热对流教学例优先读取 convection-box 完整算例。对于1000×500 km和三组Ra，未另指定时可用 rho=3300 kg/m^3、alpha=3e-5 K^-1、Cp=1250 J/(kg K)、k=4.125 W/(m K)、g=9.81 m/s^2、顶底273/1573 K；kappa=k/(rho*Cp)=1e-6 m^2/s，用Ra=rho*g*alpha*DeltaT*H^3/(eta*kappa)换算黏度，只改黏度比较。教学起步网格32×16单元、结束100 Myr、每10 Myr输出；说明可在对话中修改。不要把重力数值当成有量纲模型的Ra。
 I2VIS滴落教学例读取rayleigh_taylor；参考材料2密度3300 kg/m^3，材料3为3400/3500时参考密度差100/200 kg/m^3，保留相同的温度和热膨胀规律。热柱教学例读取mantle_plume，保持热异常在固定温度边界内侧。只比较实际演化输出；短程未显示滴落或上升时如实说明，并建议下一步修改时长。
@@ -239,7 +240,7 @@ I2VIS滴落教学例读取rayleigh_taylor；参考材料2密度3300 kg/m^3，材
     messages.append({'role':'user','content':parts if len(parts)>1 else prompt})
     events=[]
     with httpx.Client(timeout=120) as client:
-        for _ in range(16):
+        for _ in range(32):
             message=providers.complete(client,info,key,messages,specs())
             assistant={k:message[k] for k in ('role','content','tool_calls','reasoning_content','_claude_content') if k in message}
             messages.append(assistant)

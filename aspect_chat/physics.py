@@ -23,13 +23,18 @@ def current_values(case_id):
 def record(case_id,rows,missing,notes=''):
     from . import attachments,knowledge
     vals=current_values(case_id);clean=[]
-    for row in rows:
+    for index,row in enumerate(rows):
         r=dict(row)
         if r.get('category') not in CATEGORIES or r.get('status') not in {'paper','converted','assumed','template','missing'}:raise ValueError('Invalid alignment category/status')
         if r.get('status') in {'paper','converted'}:
             prepared=r.get('knowledge_document_id') is not None
             if not r.get('attachment_id') or not isinstance(r.get('page'),int) or not (r.get('quote') or prepared) or not r.get('source_unit'):
-                raise ValueError('Paper values require the source attachment, PDF page, units and a short supporting quote')
+                missing_fields=[]
+                if not r.get('attachment_id'):missing_fields.append('attachment_id')
+                if not isinstance(r.get('page'),int):missing_fields.append('page (integer; the key is page, not pdf_page or source_page)')
+                if not (r.get('quote') or prepared):missing_fields.append('quote or knowledge_document_id')
+                if not r.get('source_unit'):missing_fields.append('source_unit')
+                raise ValueError(f"Alignment row {index}, {r.get('parameter','unnamed')}: supply "+', '.join(missing_fields))
             r['source_sha256']=hashlib.sha256(Path(attachments.get(r['attachment_id'])['path']).read_bytes()).hexdigest()
             normalize=lambda s:' '.join(str(s).split()).lower()
             if prepared:
@@ -48,7 +53,7 @@ def record(case_id,rows,missing,notes=''):
             if r['status']=='converted' and not r.get('conversion'):raise ValueError('Converted values require the conversion formula')
         path=r.get('path','')
         if path:
-            if path not in vals:raise ValueError('Alignment points to an unknown input parameter: '+path)
+            if path not in vals:raise ValueError('Alignment points to an unknown input parameter: '+path+'. Use one exact inspected path per row; do not append variable names or combine paths with |. Put variable-level details in conversion.')
             actual=str(vals[path]);r['actual_value']=actual
             if 'written_value' in r and str(r['written_value']).replace(' ','')!=actual.replace(' ',''):raise ValueError('The recorded value does not match the current file: '+path)
         clean.append(r)

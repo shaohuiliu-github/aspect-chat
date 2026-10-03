@@ -193,6 +193,14 @@ def chat(prompt,current_case=None,allow_run=True,on_event=None,attachment_ids=No
     key=api_key(info['id'])
     if not key and info['id']!='custom': raise ValueError('请在设置保存当前服务商的 API 密钥。' if lang=='zh' else 'Save an API key for the selected provider in Settings.')
     engine=query('SELECT engine FROM chat_sessions WHERE id=?',(session_id,))[0]['engine'] if session_id else 'aspect'
+    # Follow-up turns must retain files explicitly uploaded to this conversation.
+    attachment_ids=list(attachment_ids or [])
+    if session_id:
+        for row in query('SELECT attachments FROM chats WHERE session_id=? ORDER BY id',(session_id,)):
+            for item in json.loads(row.get('attachments') or '[]'):
+                ident=item.get('id')
+                if ident and ident not in attachment_ids:
+                    attachment_ids.append(ident)
     vision=providers.vision_supported(info['id'],info['model'])
     if session_id:
         history=query('SELECT role,content FROM chats WHERE session_id=? ORDER BY id DESC LIMIT 16',(session_id,))[::-1]

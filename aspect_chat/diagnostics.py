@@ -29,7 +29,7 @@ def known_parameters(case_id):
         for k,v in obj.items():
             if not isinstance(v,dict):continue
             p=prefix+'/'+k if prefix else k
-            if 'documentation' in v:known.add(p)
+            if 'documentation' in v or 'alias' in v:known.add(p)
             else:walk(v,p)
     walk(tree)
     for p in actual:

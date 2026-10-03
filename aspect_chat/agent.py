@@ -207,13 +207,14 @@ def chat(prompt,current_case=None,allow_run=True,on_event=None,attachment_ids=No
     else:
         history=query('SELECT role,content FROM chats WHERE lang=? ORDER BY id DESC LIMIT 16',(lang,))[::-1]
     if history and history[-1]['role']=='user' and history[-1]['content']==prompt: history=history[:-1]
-    context={'engine':engine,'current_case':current_case,'execution_enabled':allow_run,'sources':[x for x in knowledge.sources() if knowledge.matches_engine(x['label'],engine)],
+    context={'language_model':{'provider':info['name'],'model':info['model']},'engine':engine,'current_case':current_case,'execution_enabled':allow_run,'sources':[x for x in knowledge.sources() if knowledge.matches_engine(x['label'],engine)],
              'core_budget':cfg['max_total_cores'],'default_cores_per_task':cfg['task_cores'],
              'attachment_ids':attachment_ids or [],'vision_supported':vision}
     from . import portable
     context['runtime']=portable.runtime()
     context['host_workspace']=portable.host_path(cases.DATA)
-    language='所有自然语言回复使用中文；参数路径、文件名和物理单位保留原样。' if lang=='zh' else 'Reply entirely in English. Keep ASPECT parameter paths, filenames and units unchanged.'
+    extra_identity='When asked who or what model you are, identify yourself as chatGFD, state the configured language_model provider and model exactly, and distinguish it from the selected simulation engine. Do not invent an underlying version. '
+    language=extra_identity+('所有自然语言回复使用中文；参数路径、文件名和物理单位保留原样。' if lang=='zh' else 'Reply entirely in English. Keep ASPECT parameter paths, filenames and units unchanged.')
     extra='''\n论文模型提取先 read_attachment，必要时 view_attachment 查看表格/图，逐项注明 PDF 页码、单位和是原文值还是假设。PDF 未给的参数不能捏造为论文原值。
 图片数字化必须有坐标范围、色标端点、波速类型/单位、参考密度，以及用户提供或明确认可的波速到密度转换关系。若缺失这些，先问具体缺项。不能从颜色猜密度关系。
 digitize_density_map 只生成数据，必须继续查询运行时初始组分 ascii data 与材料模型参数、接入 PRM、检查参数；不能把密度数据直接作为温度数据或把 density 类型组分当作自动材料密度。保持用户既有流变设定，无法兼容时解释需要的插件。

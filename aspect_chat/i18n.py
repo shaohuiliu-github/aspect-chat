@@ -163,7 +163,7 @@ TEXT.update({
 
 TEXT.update({
  'model_needs_changes':('模型有几项需要修改：','A few model inputs need attention:'),
- 'missing_physics':('还缺少 {count} 项物理参数，请在对话中补充。','{count} physical parameters are missing. Add them in the chat.'),
+ 'missing_physics':('有 {count} 项物理缺省或简化，详见记录，可在对话中修改。','{count} physics gaps or simplifications are recorded. Discuss changes in the chat.'),
  'reference_viscosity_log':('参考黏度 · log','Reference viscosity · log'),
  'starting':('正在启动','Starting'), 'rerun_model':('重新运行','Run again'),
  'ended_at':('结束时间：{time}','Finished at {time}'),

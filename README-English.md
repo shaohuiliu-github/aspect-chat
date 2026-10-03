@@ -4,20 +4,22 @@
 
 Geophysical Fluid Dynamics Simulation
 
-[中文](README.md) · [Installation guide](INSTALL.md) · [Releases and validation report](https://github.com/shaohuiliu-github/chatGFD/releases/tag/v2.0.3)
+[中文](README.md) · [Installation guide](INSTALL.md) · [Releases and validation report](https://github.com/shaohuiliu-github/chatGFD/releases/tag/v2.0.4)
 
 A local conversational workspace for ASPECT and i2vis, for geology, geochemistry, seismology and paleomagnetism research, with a first-model guide for beginners. The Docker image bundles solvers, Python dependencies and versioned offline references. No source checkout or separate solver installation is required.
 
 ## Start in four steps
 
 1. Install and start [Docker Desktop](https://docs.docker.com/get-started/get-docker/).
-2. Download the approximately 28 KB [chatGFD launcher](https://github.com/shaohuiliu-github/chatGFD/releases/download/v2.0.3/chatGFD-2.0.3-online.zip) and extract it.
-3. Double-click `Start.command` on Mac or `Start.bat` on Windows. The first launch downloads the simulation environment and opens the webpage.
+2. Download the small [chatGFD launcher](https://github.com/shaohuiliu-github/chatGFD/releases/download/v2.0.4/chatGFD-2.0.4-online.zip) and extract it.
+3. On Mac, open Terminal, type `bash ` (including the trailing space), drag `start.sh` from the extracted folder into Terminal, and press Return. On Windows, double-click `Start.bat`. The first launch downloads the simulation environment and opens the webpage.
 4. Enter your own model provider API key in **Settings** at the lower left. You can then chat and run models.
 
-Models and results are saved in `chatGFD-2.0.3-online/workspace` inside the extracted folder, ready for ParaView and other software. The Docker image includes ASPECT, i2vis, Python dependencies and offline references. See the [installation guide](INSTALL.md) for command-line setup, Linux and upgrades.
+Models and results are saved in `chatGFD-2.0.4-online/workspace` inside the extracted folder, ready for ParaView and other software. The Docker image includes ASPECT, i2vis, Python dependencies and offline references. See the [installation guide](INSTALL.md) for command-line setup, Linux and upgrades.
 
-If macOS cannot verify `Start.command` on first launch, follow the [installation guide](INSTALL.md) to use Apple's Open Anyway option in Privacy & Security.
+The Mac launcher is a Terminal script; the unsigned `.command` shortcut is no longer included. Repeat the same step to start later, and see the [installation guide](INSTALL.md) to stop it.
+
+The [demo prompts](DEMO_CASES.md) are copy-ready. The homepage's **Model examples** menu fills six bilingual demo prompts: four ASPECT and two I2VIS. Check the selected solver and any required upload before sending. Research-scale cases explicitly identify missing inputs and the limits of short pilot runs.
 
 ## Workflow
 

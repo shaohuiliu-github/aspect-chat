@@ -4,22 +4,24 @@
 
 Geophysical Fluid Dynamics Simulation · 地球流体动力学模拟
 
-[English](README-English.md) · [安装说明](INSTALL.md) · [发布包与验证报告](https://github.com/shaohuiliu-github/chatGFD/releases/tag/v2.0.3)
+[English](README-English.md) · [安装说明](INSTALL.md) · [发布包与验证报告](https://github.com/shaohuiliu-github/chatGFD/releases/tag/v2.0.4)
 
 面向地质、地球化学、地震与古地磁研究，也帮助初学者建立第一个动力学模型。通过对话创建、修改和运行 ASPECT / i2vis 模型。求解器、Python 环境和带版本的离线知识库封装在 Docker 镜像里，无需下载源码或单独安装求解器。
 
 ## 四步开始
 
 1. 安装并启动 [Docker Desktop](https://docs.docker.com/get-started/get-docker/)。
-2. 下载约 28 KB 的 [chatGFD 启动包](https://github.com/shaohuiliu-github/chatGFD/releases/download/v2.0.3/chatGFD-2.0.3-online.zip)，然后解压。
-3. Mac 双击 `Start.command`；Windows 双击 `Start.bat`。首次启动会自动下载模拟环境并打开网页。
+2. 下载小型 [chatGFD 启动包](https://github.com/shaohuiliu-github/chatGFD/releases/download/v2.0.4/chatGFD-2.0.4-online.zip)，然后解压。
+3. Mac 打开「终端」，输入 `bash `（末尾留一个空格），把解压目录里的 `start.sh` 拖入终端并按回车；Windows 双击 `Start.bat`。首次启动会自动下载模拟环境并打开网页。
 4. 在左下角 **Settings（设置）** 中输入自己的大模型 API 密钥，即可开始对话和运行。
 
-模型和结果保存在解压目录的 `chatGFD-2.0.3-online/workspace`，可用 ParaView 等软件打开。Docker 镜像已包含 ASPECT、i2vis、Python 环境和离线知识库。命令行安装、Linux 启动及升级步骤见 [安装说明](INSTALL.md)。
+模型和结果保存在解压目录的 `chatGFD-2.0.4-online/workspace`，可用 ParaView 等软件打开。Docker 镜像已包含 ASPECT、i2vis、Python 环境和离线知识库。命令行安装、Linux 启动及升级步骤见 [安装说明](INSTALL.md)。
 
-Mac 首次打开若出现“Apple 无法验证 Start.command”，请按[安装说明](INSTALL.md)中的 Apple 官方方法在「隐私与安全性」选择「仍要打开」。
+Mac 启动包只提供终端脚本，不含未经签名的 `.command` 快捷方式。以后重复相同步骤即可启动；停止请参照[安装说明](INSTALL.md)。
 
-## 2.0.3 的工作流程
+[演示提示词](DEMO_CASES.md)也可复制。首页「经典模型示例」可一键填入六条中英文演示提示词：ASPECT 四条，I2VIS 两条。点击后先检查附件与模型选择，再发送。研究级案例会明确列出缺失参数与短程计算的解释边界。
+
+## 2.0.4 的工作流程
 
 - 在对话框上传 PDF、图片、PRM 或 i2vis 输入文件，发送后的附件保留在消息里。中英文界面，新工作区默认英文；可删除对话并保留模型和结果。
 - 论文提取先记录物理参数、原单位、PDF 页码、短引文、换算、实际输入值和缺失项。记录随输入版本变化，并随运行快照保存。参数语法通过不代表论文已复现；网格和迭代收敛检查是后续工作。

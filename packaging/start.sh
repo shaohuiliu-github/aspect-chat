@@ -8,7 +8,7 @@ workspace="$root/workspace"
 mkdir -p "$workspace/inputs" "$workspace/.host-open"
 name="aspect-chat-$(printf '%s' "$root" | cksum | awk '{print $1}')"
 if ! command -v docker >/dev/null; then
-  printf '请安装并启动 Docker Desktop，然后再打开此文件。\nInstall and start Docker Desktop, then open this file again.\nhttps://docs.docker.com/get-started/get-docker/\n'
+  printf '请安装并启动 Docker Desktop，然后重新运行 bash start.sh。\nInstall and start Docker Desktop, then run bash start.sh again.\nhttps://docs.docker.com/get-started/get-docker/\n'
   exit 1
 fi
 # Reuse a running Colima profile without changing the user's default Docker context.
@@ -35,7 +35,7 @@ if [ "$mode" = stop ]; then
 fi
 arch="$(docker info --format '{{.Architecture}}')"
 case "$arch" in aarch64|arm64) arch=arm64;; x86_64|amd64) arch=amd64;; *) printf 'Unsupported architecture: %s\n' "$arch"; exit 1;; esac
-image="aspect-chat:2.0.3-aspect3.1.0-$arch"
+image="aspect-chat:2.0.4-aspect3.1.0-$arch"
 if ! docker image inspect "$image" >/dev/null 2>&1; then
   archive="images/aspect-chat-$arch.tar.gz"
   if [ -f "$archive" ]; then
@@ -63,7 +63,7 @@ else
   for attempt in $(seq 1 30); do
     if (: >/dev/tcp/127.0.0.1/"$port") 2>/dev/null; then port=$((port+1)); continue; fi
     if docker run -d --name "$name" --restart unless-stopped --stop-timeout 30 \
-      --label "aspect-chat.port=$port" --label aspect-chat.package=2.0.3 \
+      --label "aspect-chat.port=$port" --label aspect-chat.package=2.0.4 \
       --user "$(id -u):$(id -g)" -p "127.0.0.1:$port:8517" \
       --mount "type=bind,source=$workspace,target=/workspace" \
       -e "ASPECT_CHAT_HOST_WORKSPACE=$workspace" -e "ASPECT_CHAT_PUBLIC_PORT=$port" \
@@ -82,7 +82,7 @@ for attempt in $(seq 1 90); do
   sleep 1
 done
 if [ "$ready" != true ]; then docker logs --tail 80 "$name"; exit 1; fi
-printf '\nchatGFD: %s\n模型与结果 / Models and results: %s\n关闭此窗口后计算会继续；停止计算请运行 Stop。\nClosing this window leaves computations running; use Stop to stop them.\n\n' "$url" "$workspace"
+printf '\nchatGFD: %s\n模型与结果 / Models and results: %s\n关闭此窗口后计算会继续；停止请运行 bash start.sh stop。\nClosing this window leaves computations running; stop with bash start.sh stop.\n\n' "$url" "$workspace"
 if [ "${ASPECT_CHAT_NO_BROWSER:-0}" != 1 ]; then
   if [ "$(uname -s)" = Darwin ]; then open "$url"; else xdg-open "$url" >/dev/null 2>&1 || true; fi
 fi

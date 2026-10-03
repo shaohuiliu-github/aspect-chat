@@ -24,7 +24,7 @@ def install(destination,source_dir=None):
         manifest['sources']=[{'source':s['label'],'version':s['version'],'role':s['role'],'revision':s['revision'],'origin':s['origin'],
           'documents':c.execute('SELECT count(*) FROM documents WHERE source=?',(s['label'],)).fetchone()[0],
           'categories':{r['kind']:r['n'] for r in c.execute('SELECT kind,count(*) AS n FROM documents WHERE source=? GROUP BY kind',(s['label'],))}} for s in knowledge.sources()]
-    manifest.update({'package_version':'2.0.3','knowledge':knowledge.summary(),'prepared_papers':{'sources':results,'full_pdfs_redistributed':False,'runtime_templates':False,'shared_between_solvers':True}})
+    manifest.update({'package_version':'2.0.4','knowledge':knowledge.summary(),'prepared_papers':{'sources':results,'full_pdfs_redistributed':False,'runtime_templates':False,'shared_between_solvers':True}})
     manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
     return manifest
 if __name__=='__main__':
